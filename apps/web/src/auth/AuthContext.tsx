@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { api, ApiError } from "../lib/api";
+import { api, ApiError, definirAoPerderSessao } from "../lib/api";
 import type { Usuario } from "../lib/types";
 import { Carregando } from "../components/ui";
 
 type Auth = {
   usuario: Usuario | null;
   ehAdmin: boolean;
+  sessaoExpirada: boolean;
   login: (email: string, senha: string) => Promise<Usuario>;
   logout: () => Promise<void>;
 };
@@ -16,6 +17,16 @@ const AuthContext = createContext<Auth | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
+  const [sessaoExpirada, setSessaoExpirada] = useState(false);
+
+  useEffect(() => {
+    definirAoPerderSessao(() => {
+      queryClient.clear();
+      queryClient.setQueryData(["me"], null);
+      setSessaoExpirada(true);
+    });
+    return () => definirAoPerderSessao(undefined);
+  }, [queryClient]);
 
   const me = useQuery({
     queryKey: ["me"],
@@ -31,7 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: ({ email, senha }: { email: string; senha: string }) =>
       api<Usuario>("/auth/login", { method: "POST", body: { email, senha } }),
-    onSuccess: (usuario) => queryClient.setQueryData(["me"], usuario),
+    onSuccess: (usuario) => {
+      setSessaoExpirada(false);
+      queryClient.setQueryData(["me"], usuario);
+    },
   });
 
   const logoutMutation = useMutation({
@@ -48,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const valor: Auth = {
     usuario,
     ehAdmin: usuario?.papel === "admin",
+    sessaoExpirada,
     login: (email, senha) => loginMutation.mutateAsync({ email, senha }),
     logout: () => logoutMutation.mutateAsync(),
   };
