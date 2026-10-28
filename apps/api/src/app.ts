@@ -8,6 +8,7 @@ import authPlugin from "./plugins/auth.js";
 import { rotasAuth } from "./routes/auth.js";
 import { rotasCategorias } from "./routes/categorias.js";
 import { rotasFornecedores } from "./routes/fornecedores.js";
+import { rotasMovimentacoes } from "./routes/movimentacoes.js";
 import { rotasProdutos } from "./routes/produtos.js";
 
 export async function buildApp({ db, config }: { db: Db; config: Config }) {
@@ -36,6 +37,7 @@ export async function buildApp({ db, config }: { db: Db; config: Config }) {
   await app.register(rotasCategorias, { db });
   await app.register(rotasFornecedores, { db });
   await app.register(rotasProdutos, { db });
+  await app.register(rotasMovimentacoes, { db });
 
   return app;
 }

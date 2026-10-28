@@ -53,4 +53,43 @@ export const produtoListagemSchema = listagemSchema.extend({
 
 export const idSchema = z.object({ id: z.coerce.number().int().positive() });
 
+const idPositivo = z.number().int().positive();
+const quantidadePositiva = z.number().int().positive();
+
+/**
+ * Entrada e saída informam a quantidade movimentada; o ajuste informa o saldo contado
+ * (novoSaldo) e exige motivo. A quantidade gravada é sempre a variação aplicada ao saldo.
+ */
+export const movimentacaoSchema = z.discriminatedUnion("tipo", [
+  z.object({
+    tipo: z.literal("entrada"),
+    produtoId: idPositivo,
+    quantidade: quantidadePositiva,
+    motivo: z.string().trim().max(300).nullish(),
+    fornecedorId: idPositivo.nullish(),
+  }),
+  z.object({
+    tipo: z.literal("saida"),
+    produtoId: idPositivo,
+    quantidade: quantidadePositiva,
+    motivo: z.string().trim().max(300).nullish(),
+  }),
+  z.object({
+    tipo: z.literal("ajuste"),
+    produtoId: idPositivo,
+    novoSaldo: z.number().int().min(0),
+    motivo: texto(300),
+  }),
+]);
+export type MovimentacaoInput = z.infer<typeof movimentacaoSchema>;
+
+const dataQuery = z.iso.date();
+
+export const movimentacaoListagemSchema = listagemSchema.omit({ q: true }).extend({
+  produtoId: z.coerce.number().int().positive().optional(),
+  tipo: z.enum(TIPOS_MOVIMENTACAO).optional(),
+  de: dataQuery.optional(),
+  ate: dataQuery.optional(),
+});
+
 export type Pagina<T> = { items: T[]; total: number; page: number; pageSize: number };
