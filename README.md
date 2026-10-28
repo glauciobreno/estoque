@@ -34,10 +34,10 @@ Sistema web para controle de estoque: cadastro de produtos, categorias e fornece
 
 ### Fase 1: Backend base (2–3 dias)
 
-- [ ] Schema Drizzle e primeira migration
-- [ ] API exportando o `app` separado do `listen()` (roda local e como função serverless)
-- [ ] Autenticação (login, logout, middleware de papéis)
-- [ ] CRUD de categorias, fornecedores e produtos, com paginação, busca e filtros
+- [x] Schema Drizzle e primeira migration
+- [x] API exportando o `app` separado do `listen()` (roda local e como função serverless)
+- [x] Autenticação (login, logout, middleware de papéis)
+- [x] CRUD de categorias, fornecedores e produtos, com paginação, busca e filtros
 
 ### Fase 2: Núcleo de estoque (2–3 dias)
 
@@ -98,7 +98,24 @@ Requer Node 22 (`.nvmrc`).
 npm install
 cp .env.example .env   # ajuste os valores
 npm run lint && npm run typecheck && npm test
+
+npm run db:migrate -w @estoque/api   # aplica as migrations
+npm run db:seed -w @estoque/api      # cria o admin (ADMIN_EMAIL / ADMIN_SENHA)
+npm run dev -w @estoque/api          # API em http://localhost:3000
 ```
+
+Após alterar `apps/api/src/db/schema.ts`, gere a migration com `npm run db:generate -w @estoque/api` e commite a pasta `apps/api/drizzle`.
+
+### API (Fase 1)
+
+| Rota                                                       | Acesso                          |
+| ---------------------------------------------------------- | ------------------------------- |
+| `GET /health`                                              | público                         |
+| `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`    | login público; `me` autenticado |
+| `GET /categorias`, `/fornecedores`, `/produtos` (+ `/:id`) | qualquer usuário autenticado    |
+| `POST`, `PUT`, `DELETE` nesses recursos                    | somente `admin`                 |
+
+Listagens aceitam `q`, `page` e `pageSize` (máx. 100); `/produtos` também aceita `categoriaId`, `ativo` e `abaixoDoMinimo`. Preços são inteiros em centavos. O saldo do produto só muda por movimentações (Fase 2).
 
 ### Banco (Turso)
 
