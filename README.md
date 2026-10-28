@@ -68,11 +68,15 @@ Sistema web para controle de estoque: cadastro de produtos, categorias e fornece
 
 ### Fase 6: Deploy (1 dia)
 
-- [ ] Projeto `web` na Vercel (root `apps/web`) e projeto `api` (root `apps/api`)
-- [ ] Variáveis de ambiente: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `JWT_SECRET`, `CORS_ORIGIN`, `VITE_API_URL`
-- [ ] Migrations do Drizzle rodando no CI (GitHub Actions)
-- [ ] Endpoint `/health`, domínio e HTTPS
-- [ ] Deploy automático a partir da branch `main`
+Passo a passo completo em [`docs/DEPLOY.md`](docs/DEPLOY.md).
+
+- [x] Configuração do projeto `web` (`apps/web/vercel.json`): proxy `/api`, fallback do SPA e cabeçalhos de segurança com CSP
+- [x] API pronta para a Vercel (Fastify, ponto de entrada `src/server.ts`) e variáveis de ambiente documentadas
+- [x] Migrations do Drizzle rodando no CI (workflow `Migrar banco`, ambiente `production`)
+- [x] Endpoints `/health` e `/health/ready` (este confirma o acesso ao banco) e `npm run smoke` para verificar o site publicado
+- [ ] Criar o banco no Turso e os _secrets_ `TURSO_DATABASE_URL` e `TURSO_AUTH_TOKEN` no ambiente `production` do GitHub _(ação do dono do repositório)_
+- [ ] Criar os projetos `api` (root `apps/api`) e `web` (root `apps/web`) na Vercel e cadastrar as variáveis _(ação do dono)_
+- [ ] Deploy automático a partir da `main` (a Vercel faz ao conectar o repositório) e domínio/HTTPS (automático; domínio próprio opcional)
 - [ ] Verificar a política de backup do plano do Turso
 
 **Estimativa do MVP** (fases 0 a 3, 5 e 6): cerca de 2 a 3 semanas em tempo parcial.
@@ -85,7 +89,7 @@ Sistema web para controle de estoque: cadastro de produtos, categorias e fornece
 
 ## Riscos e cuidados
 
-- **Cookies entre domínios:** exigem `SameSite=None; Secure` e CORS com credenciais; subdomínios do mesmo domínio simplificam.
+- **Cookies entre domínios:** em `*.vercel.app` o cookie da API seria de terceiros (bloqueado no Safari). Por isso o site encaminha `/api` para a API (mesma origem). Detalhes em `docs/DEPLOY.md`.
 - **Cold start** das funções serverless na primeira requisição.
 - **Concorrência:** usar transações do libSQL nas movimentações.
 - **Escopo:** multi-depósito, lotes/validade e pedidos de compra ficam fora do MVP.

@@ -1,0 +1,43 @@
+name: Migrar banco
+
+# Aplica as migrations do Drizzle no Turso de produção.
+# Roda sozinho quando o schema ou as migrations mudam na main, ou manualmente (Actions > Migrar banco).
+# Os segredos ficam no ambiente "production" do GitHub (Settings > Environments).
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/api/drizzle/**
+      - apps/api/src/db/**
+  workflow_dispatch:
+
+# Nunca duas migrações ao mesmo tempo.
+concurrency:
+  group: migrar-banco-producao
+  cancel-in-progress: false
+
+jobs:
+  migrar:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Conferir segredos
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          if [ -z "$TURSO_DATABASE_URL" ] || [ -z "$TURSO_AUTH_TOKEN" ]; then
+            echo "::error::Defina TURSO_DATABASE_URL e TURSO_AUTH_TOKEN como segredos do ambiente production"
+            exit 1
+          fi
+      - name: Aplicar migrations
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: npm run db:migrate -w @estoque/api

@@ -14,10 +14,11 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p e2e",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p e2e && tsc -p scripts",
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "smoke": "tsx scripts/smoke.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
