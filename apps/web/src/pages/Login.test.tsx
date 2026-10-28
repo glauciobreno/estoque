@@ -57,3 +57,22 @@ describe("autenticação na interface", () => {
     expect(screen.getByText("Nenhum produto abaixo do mínimo.")).toBeInTheDocument();
   });
 });
+
+describe("sessão expirada", () => {
+  it("volta ao login com aviso quando uma rota protegida responde 401", async () => {
+    let autenticado = true;
+    simularApi({
+      "GET /auth/me": () =>
+        autenticado ? { corpo: admin } : { status: 401, corpo: { erro: "Não autenticado" } },
+      "GET /estoque/resumo": () => {
+        autenticado = false;
+        return { status: 401, corpo: { erro: "Não autenticado" } };
+      },
+      "GET /estoque/alertas": { status: 401, corpo: { erro: "Não autenticado" } },
+      "GET /movimentacoes": { status: 401, corpo: { erro: "Não autenticado" } },
+    });
+    renderizarApp("/");
+    expect(await screen.findByRole("button", { name: "Entrar" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Sua sessão expirou");
+  });
+});

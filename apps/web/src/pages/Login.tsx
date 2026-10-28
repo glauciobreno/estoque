@@ -6,7 +6,7 @@ import { Button, Campo, Input } from "../components/ui";
 import { ApiError } from "../lib/api";
 
 export function Login() {
-  const { usuario, login } = useAuth();
+  const { usuario, login, sessaoExpirada } = useAuth();
   const navigate = useNavigate();
   const destino = (useLocation().state as { de?: string } | null)?.de ?? "/";
   const [erro, setErro] = useState<string | null>(null);
@@ -59,6 +59,11 @@ export function Login() {
         <Campo rotulo="Senha">
           {(id) => <Input id={id} name="senha" type="password" autoComplete="current-password" />}
         </Campo>
+        {sessaoExpirada && !erro && (
+          <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Sua sessão expirou. Entre novamente para continuar.
+          </p>
+        )}
         {erro && (
           <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
             {erro}

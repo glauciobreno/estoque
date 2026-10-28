@@ -8,20 +8,22 @@ import { usuarios } from "../src/db/schema.js";
 export const config: Config = {
   databaseUrl: ":memory:",
   jwtSecret: "segredo-de-teste-com-mais-de-32-caracteres",
-  corsOrigin: "http://localhost:5173",
+  corsOrigins: ["http://localhost:5173"],
   port: 0,
   cookieSameSite: "lax",
   cookieSecure: false,
+  trustProxy: false,
+  logLevel: "silent",
+  rateLimit: { max: 10_000, loginMax: 10_000 },
 };
 
-export async function criarApp() {
-  const db = createDb(":memory:");
+export async function criarApp(sobrescrever: Partial<Config> = {}, db = createDb(":memory:")) {
   await aplicarMigrations(db);
   await db.insert(usuarios).values([
     { nome: "Admin", email: "admin@x.com", senhaHash: await hash("admin123", 4), papel: "admin" },
     { nome: "Op", email: "op@x.com", senhaHash: await hash("op12345", 4), papel: "operador" },
   ]);
-  const app = await buildApp({ db, config });
+  const app = await buildApp({ db, config: { ...config, ...sobrescrever } });
   return app;
 }
 

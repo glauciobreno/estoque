@@ -22,7 +22,10 @@ export const rotasAuth: FastifyPluginAsync<{ db: Db; config: Config }> = async (
     path: "/",
   } as const;
 
-  app.post("/auth/login", async (req, reply) => {
+  // Limite próprio e mais restrito contra tentativa de adivinhar senhas.
+  const limiteLogin = { rateLimit: { max: config.rateLimit.loginMax, timeWindow: "1 minute" } };
+
+  app.post("/auth/login", { config: limiteLogin }, async (req, reply) => {
     const { email, senha } = loginSchema.parse(req.body);
     const [usuario] = await db.select().from(usuarios).where(eq(usuarios.email, email));
     const ok = await compare(senha, usuario?.senhaHash ?? HASH_FALSO);

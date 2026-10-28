@@ -62,9 +62,9 @@ Sistema web para controle de estoque: cadastro de produtos, categorias e fornece
 
 ### Fase 5: Qualidade e segurança (1–2 dias)
 
-- [ ] Testes E2E dos fluxos críticos (login, cadastrar produto, entrada e saída)
-- [ ] Rate limit, helmet, CORS restrito, validação em todas as rotas
-- [ ] Tratamento de erros e logs
+- [x] Testes E2E dos fluxos críticos (login, cadastrar produto, entrada e saída)
+- [x] Rate limit, helmet, CORS restrito, validação em todas as rotas
+- [x] Tratamento de erros e logs
 
 ### Fase 6: Deploy (1 dia)
 
@@ -145,6 +145,39 @@ Em desenvolvimento o Vite encaminha `/api/*` para a API (`API_PROXY_TARGET`, pad
 - **Permissões:** o operador lê tudo e registra movimentações; criar, editar e excluir cadastros aparece só para o `admin` (a API também exige).
 - **Estado na URL:** busca, filtros e página ficam na query string, então os links são compartilháveis e o botão voltar funciona.
 - **Valores monetários** são digitados em reais (`12,50`) e trafegam em centavos.
+
+### Qualidade e segurança (Fase 5)
+
+**Testes E2E** (Playwright, contra a API real e o build de produção do front, com um banco SQLite descartável):
+
+```bash
+npx playwright install chromium   # uma vez
+npm run test:e2e
+```
+
+Cobrem login e sessão, o fluxo completo de estoque (cadastro, entrada, saída, saldo insuficiente, ajuste, histórico, alerta) e as permissões do operador. Se o Chromium já estiver instalado em outro caminho, use `PLAYWRIGHT_CHROMIUM_PATH`. No CI eles rodam num job próprio, depois das verificações rápidas.
+
+**Segurança da API**
+
+| Proteção              | Como funciona                                                                                                                           |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Cabeçalhos            | `@fastify/helmet` (HSTS, `nosniff`, etc.)                                                                                               |
+| Limite de requisições | 300/min por IP no geral e 10/min no login (`RATE_LIMIT_*`); `/health` fica de fora. Com a API atrás de proxy, defina `TRUST_PROXY=true` |
+| CORS                  | Só as origens de `CORS_ORIGIN`, com credenciais; curinga é recusado na inicialização                                                    |
+| CSRF                  | Cookie `httpOnly` + `SameSite`, e escritas (POST/PUT/DELETE) com `Origin` diferente das permitidas recebem 403                          |
+| Validação             | Corpo, parâmetros e query validados com Zod em todas as rotas; corpo limitado a 100 KB                                                  |
+| Senhas e sessão       | bcrypt; login com a mesma mensagem e tempo de resposta para e-mail inexistente e senha errada; JWT de 7 dias em cookie                  |
+
+**Erros e logs**
+
+- Toda resposta traz `x-request-id`; erros 5xx devolvem `{ erro: "Erro interno", requestId }` sem detalhes internos, e o mesmo id aparece no log. O front mostra o código ao usuário para facilitar o suporte.
+- Logs em JSON (pino), com `cookie`, `authorization` e `set-cookie` ocultados; nível em `LOG_LEVEL`.
+- No front: sessão expirada leva ao login com aviso, falha de rede e indisponibilidade têm mensagens próprias, e um error boundary evita tela em branco.
+
+**Limitações conhecidas**
+
+- O limite de requisições fica na memória de cada instância; em ambiente serverless, com várias instâncias, ele é aproximado.
+- O JWT não é revogável antes de expirar (7 dias): sair limpa o cookie, mas um token copiado continua válido até o fim. Não há gestão de usuários ainda; ao criá-la, convém reconferir o papel no banco a cada requisição.
 
 ### Banco (Turso)
 

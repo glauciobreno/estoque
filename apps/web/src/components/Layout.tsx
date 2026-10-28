@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "./ui";
 
@@ -14,6 +15,7 @@ const itens = [
 export function Layout() {
   const { usuario, logout } = useAuth();
   const [aberto, setAberto] = useState(false);
+  const { pathname } = useLocation();
 
   const menu = (
     <nav aria-label="Principal" className="flex flex-col gap-1">
@@ -74,7 +76,9 @@ export function Layout() {
       )}
 
       <main className="min-w-0 flex-1 p-4 md:p-8">
-        <Outlet />
+        <ErrorBoundary key={pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   );
