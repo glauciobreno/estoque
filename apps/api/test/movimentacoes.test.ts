@@ -227,4 +227,18 @@ describe("histórico e alertas", () => {
     const depois = (await req("GET", "/estoque/alertas?pageSize=100", admin)).json();
     expect(depois.items.map((i: { id: number }) => i.id)).not.toContain(baixo.id);
   });
+
+  it("resume o estoque: valor a preço de custo, alertas e itens zerados", async () => {
+    const antes = (await req("GET", "/estoque/resumo", admin)).json();
+
+    const p = await novoProduto({ precoCusto: 250, estoqueMinimo: 10 });
+    await mover(admin, { tipo: "entrada", produtoId: p.id, quantidade: 4 });
+    await novoProduto({ ativo: false, precoCusto: 99999 });
+
+    const depois = (await req("GET", "/estoque/resumo", admin)).json();
+    expect(depois.produtosAtivos).toBe(antes.produtosAtivos + 1);
+    expect(depois.valorEmEstoque).toBe(antes.valorEmEstoque + 4 * 250);
+    expect(depois.abaixoDoMinimo).toBe(antes.abaixoDoMinimo + 1);
+    expect((await req("GET", "/estoque/resumo")).statusCode).toBe(401);
+  });
 });

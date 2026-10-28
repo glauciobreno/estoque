@@ -4,7 +4,7 @@ import {
   movimentacaoListagemSchema,
   movimentacaoSchema,
 } from "@estoque/shared";
-import { and, count, desc, eq, gte, lte } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { FastifyPluginAsync } from "fastify";
 import type { Db } from "../db/client.js";
 import { movimentacoes, produtos, usuarios } from "../db/schema.js";
@@ -85,5 +85,18 @@ export const rotasMovimentacoes: FastifyPluginAsync<{ db: Db }> = async (app, { 
       .from(produtos)
       .where(filtro);
     return pagina(items, total, page, pageSize);
+  });
+
+  app.get("/estoque/resumo", { preHandler: app.autenticar }, async () => {
+    const [resumo] = await db
+      .select({
+        produtosAtivos: count(),
+        valorEmEstoque: sql<number>`coalesce(sum(${produtos.saldoAtual} * ${produtos.precoCusto}), 0)`,
+        abaixoDoMinimo: sql<number>`coalesce(sum(case when ${abaixoDoMinimo} then 1 else 0 end), 0)`,
+        semEstoque: sql<number>`coalesce(sum(case when ${produtos.saldoAtual} = 0 then 1 else 0 end), 0)`,
+      })
+      .from(produtos)
+      .where(eq(produtos.ativo, true));
+    return resumo ?? { produtosAtivos: 0, valorEmEstoque: 0, abaixoDoMinimo: 0, semEstoque: 0 };
   });
 };
