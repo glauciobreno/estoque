@@ -48,10 +48,10 @@ Sistema web para controle de estoque: cadastro de produtos, categorias e fornece
 
 ### Fase 3: Frontend (4–5 dias)
 
-- [ ] Layout, login e rotas protegidas
-- [ ] Telas de produtos, categorias e fornecedores
-- [ ] Tela de movimentações (entrada, saída e ajuste)
-- [ ] Dashboard: itens abaixo do mínimo, últimas movimentações, valor total em estoque
+- [x] Layout, login e rotas protegidas
+- [x] Telas de produtos, categorias e fornecedores
+- [x] Tela de movimentações (entrada, saída e ajuste)
+- [x] Dashboard: itens abaixo do mínimo, últimas movimentações, valor total em estoque
 
 ### Fase 4: Extras (opcional, 2–3 dias)
 
@@ -131,6 +131,20 @@ Listagens aceitam `q`, `page` e `pageSize` (máx. 100); `/produtos` também acei
 - A `quantidade` gravada é sempre a variação aplicada ao saldo (entrada +, saída −, ajuste ±), então `saldo_atual` é a soma das movimentações.
 - Movimentação e saldo são gravados na mesma transação; saída acima do saldo retorna 409 e não grava nada. Movimentações são imutáveis: correções são novos ajustes.
 - Alertas listam produtos **ativos** com `estoqueMinimo > 0` e saldo menor ou igual ao mínimo (o mesmo critério do filtro `abaixoDoMinimo` em `/produtos`).
+
+### Frontend (Fase 3)
+
+```bash
+npm run dev -w @estoque/api   # API em :3000
+npm run dev -w @estoque/web   # app em http://localhost:5173
+```
+
+Em desenvolvimento o Vite encaminha `/api/*` para a API (`API_PROXY_TARGET`, padrão `http://localhost:3000`), então front e API ficam na mesma origem, sem CORS e com cookie de sessão. Em produção defina `VITE_API_URL` com a URL da API (e `COOKIE_SAMESITE=none` se os domínios forem diferentes).
+
+- **Telas:** login, dashboard, produtos (lista, filtros, detalhe com histórico), movimentações, categorias e fornecedores.
+- **Permissões:** o operador lê tudo e registra movimentações; criar, editar e excluir cadastros aparece só para o `admin` (a API também exige).
+- **Estado na URL:** busca, filtros e página ficam na query string, então os links são compartilháveis e o botão voltar funciona.
+- **Valores monetários** são digitados em reais (`12,50`) e trafegam em centavos.
 
 ### Banco (Turso)
 
