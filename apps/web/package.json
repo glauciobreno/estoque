@@ -1,0 +1,13 @@
+{
+  "name": "@estoque/web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@estoque/shared": "*"
+  }
+}

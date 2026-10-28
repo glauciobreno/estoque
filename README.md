@@ -4,15 +4,15 @@ Sistema web para controle de estoque: cadastro de produtos, categorias e fornece
 
 ## Stack
 
-| Camada | Tecnologia |
-|---|---|
-| Estrutura | Monorepo (npm workspaces): `apps/web`, `apps/api`, `packages/shared` |
-| Frontend | React + Vite + TypeScript, TanStack Query, React Router, React Hook Form + Zod, Tailwind + shadcn/ui |
-| Backend | Node 22 + Fastify + TypeScript + Zod |
-| Banco | [Turso](https://turso.tech) (libSQL/SQLite) via `@libsql/client` + Drizzle ORM + drizzle-kit |
-| Autenticação | JWT em cookie httpOnly + argon2/bcrypt, papéis (admin, operador) |
-| Testes | Vitest (unidade e API) + Playwright (E2E) |
-| Deploy | Vercel (front e API) + Turso (banco) |
+| Camada       | Tecnologia                                                                                           |
+| ------------ | ---------------------------------------------------------------------------------------------------- |
+| Estrutura    | Monorepo (npm workspaces): `apps/web`, `apps/api`, `packages/shared`                                 |
+| Frontend     | React + Vite + TypeScript, TanStack Query, React Router, React Hook Form + Zod, Tailwind + shadcn/ui |
+| Backend      | Node 22 + Fastify + TypeScript + Zod                                                                 |
+| Banco        | [Turso](https://turso.tech) (libSQL/SQLite) via `@libsql/client` + Drizzle ORM + drizzle-kit         |
+| Autenticação | JWT em cookie httpOnly + argon2/bcrypt, papéis (admin, operador)                                     |
+| Testes       | Vitest (unidade e API) + Playwright (E2E)                                                            |
+| Deploy       | Vercel (front e API) + Turso (banco)                                                                 |
 
 ## Modelo de dados inicial
 
@@ -27,40 +27,47 @@ Sistema web para controle de estoque: cadastro de produtos, categorias e fornece
 ## Fases do projeto
 
 ### Fase 0: Fundação (1–2 dias)
-- [ ] Monorepo, TypeScript, ESLint/Prettier, `.env.example`
-- [ ] GitHub Actions com lint, typecheck e testes
+
+- [x] Monorepo, TypeScript, ESLint/Prettier, `.env.example`
+- [x] GitHub Actions com lint, typecheck e testes
 - [ ] Criar o banco no Turso (`turso db create`) e gerar o token
 
 ### Fase 1: Backend base (2–3 dias)
+
 - [ ] Schema Drizzle e primeira migration
 - [ ] API exportando o `app` separado do `listen()` (roda local e como função serverless)
 - [ ] Autenticação (login, logout, middleware de papéis)
 - [ ] CRUD de categorias, fornecedores e produtos, com paginação, busca e filtros
 
 ### Fase 2: Núcleo de estoque (2–3 dias)
+
 - [ ] Endpoint de movimentações transacionais, com bloqueio de saldo negativo
 - [ ] Histórico de movimentações por produto
 - [ ] Alerta de estoque mínimo
 - [ ] Testes unitários da regra de saldo
 
 ### Fase 3: Frontend (4–5 dias)
+
 - [ ] Layout, login e rotas protegidas
 - [ ] Telas de produtos, categorias e fornecedores
 - [ ] Tela de movimentações (entrada, saída e ajuste)
 - [ ] Dashboard: itens abaixo do mínimo, últimas movimentações, valor total em estoque
 
 ### Fase 4: Extras (opcional, 2–3 dias)
+
 - [ ] Exportação CSV
 - [ ] Importação de produtos por planilha
 - [ ] Relatórios por período
 - [ ] Código de barras
 
 ### Fase 5: Qualidade e segurança (1–2 dias)
+
 - [ ] Testes E2E dos fluxos críticos (login, cadastrar produto, entrada e saída)
 - [ ] Rate limit, helmet, CORS restrito, validação em todas as rotas
 - [ ] Tratamento de erros e logs
 
 ### Fase 6: Deploy (1 dia)
+
 - [ ] Projeto `web` na Vercel (root `apps/web`) e projeto `api` (root `apps/api`)
 - [ ] Variáveis de ambiente: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `JWT_SECRET`, `CORS_ORIGIN`, `VITE_API_URL`
 - [ ] Migrations do Drizzle rodando no CI (GitHub Actions)
@@ -85,4 +92,20 @@ Sistema web para controle de estoque: cadastro de produtos, categorias e fornece
 
 ## Desenvolvimento local
 
-_A ser preenchido na Fase 0._
+Requer Node 22 (`.nvmrc`).
+
+```bash
+npm install
+cp .env.example .env   # ajuste os valores
+npm run lint && npm run typecheck && npm test
+```
+
+### Banco (Turso)
+
+```bash
+turso db create estoque
+turso db show estoque --url        # TURSO_DATABASE_URL
+turso db tokens create estoque     # TURSO_AUTH_TOKEN
+```
+
+Em desenvolvimento local, `TURSO_DATABASE_URL=file:local.db` dispensa o Turso.
