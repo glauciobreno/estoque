@@ -1,8 +1,9 @@
 import { idSchema, produtoListagemSchema, produtoSchema } from "@estoque/shared";
-import { and, count, eq, like, lte, or } from "drizzle-orm";
+import { and, count, eq, like, or } from "drizzle-orm";
 import type { FastifyPluginAsync } from "fastify";
 import type { Db } from "../db/client.js";
 import { categorias, movimentacoes, produtos } from "../db/schema.js";
+import { abaixoDoMinimo } from "../estoque.js";
 import { HttpError, naoEncontrado, tratarUnico } from "../erros.js";
 import { deslocamento, pagina } from "../paginacao.js";
 
@@ -19,14 +20,19 @@ export const rotasProdutos: FastifyPluginAsync<{ db: Db }> = async (app, { db })
   }
 
   app.get("/produtos", { preHandler: app.autenticar }, async (req) => {
-    const { q, page, pageSize, categoriaId, ativo, abaixoDoMinimo } = produtoListagemSchema.parse(
-      req.query,
-    );
+    const {
+      q,
+      page,
+      pageSize,
+      categoriaId,
+      ativo,
+      abaixoDoMinimo: filtrarAbaixo,
+    } = produtoListagemSchema.parse(req.query);
     const filtro = and(
       q ? or(like(produtos.nome, `%${q}%`), like(produtos.sku, `%${q}%`)) : undefined,
       categoriaId ? eq(produtos.categoriaId, categoriaId) : undefined,
       ativo === undefined ? undefined : eq(produtos.ativo, ativo),
-      abaixoDoMinimo ? lte(produtos.saldoAtual, produtos.estoqueMinimo) : undefined,
+      filtrarAbaixo ? abaixoDoMinimo : undefined,
     );
     const items = await db
       .select()

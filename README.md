@@ -41,10 +41,10 @@ Sistema web para controle de estoque: cadastro de produtos, categorias e fornece
 
 ### Fase 2: Núcleo de estoque (2–3 dias)
 
-- [ ] Endpoint de movimentações transacionais, com bloqueio de saldo negativo
-- [ ] Histórico de movimentações por produto
-- [ ] Alerta de estoque mínimo
-- [ ] Testes unitários da regra de saldo
+- [x] Endpoint de movimentações transacionais, com bloqueio de saldo negativo
+- [x] Histórico de movimentações por produto
+- [x] Alerta de estoque mínimo
+- [x] Testes unitários da regra de saldo
 
 ### Fase 3: Frontend (4–5 dias)
 
@@ -115,7 +115,22 @@ Após alterar `apps/api/src/db/schema.ts`, gere a migration com `npm run db:gene
 | `GET /categorias`, `/fornecedores`, `/produtos` (+ `/:id`) | qualquer usuário autenticado    |
 | `POST`, `PUT`, `DELETE` nesses recursos                    | somente `admin`                 |
 
-Listagens aceitam `q`, `page` e `pageSize` (máx. 100); `/produtos` também aceita `categoriaId`, `ativo` e `abaixoDoMinimo`. Preços são inteiros em centavos. O saldo do produto só muda por movimentações (Fase 2).
+Listagens aceitam `q`, `page` e `pageSize` (máx. 100); `/produtos` também aceita `categoriaId`, `ativo` e `abaixoDoMinimo`. Preços são inteiros em centavos. O saldo do produto só muda por movimentações.
+
+### Estoque (Fase 2)
+
+| Rota                                                               | Acesso                       |
+| ------------------------------------------------------------------ | ---------------------------- |
+| `POST /movimentacoes`                                              | qualquer usuário autenticado |
+| `GET /movimentacoes` (`produtoId`, `tipo`, `de`, `ate`, paginação) | autenticado                  |
+| `GET /produtos/:id/movimentacoes`                                  | autenticado                  |
+| `GET /estoque/alertas`                                             | autenticado                  |
+
+- **Entrada** e **saída** informam `quantidade` (inteiro positivo); a entrada aceita `fornecedorId`.
+- **Ajuste** informa `novoSaldo` (a contagem) e exige `motivo`.
+- A `quantidade` gravada é sempre a variação aplicada ao saldo (entrada +, saída −, ajuste ±), então `saldo_atual` é a soma das movimentações.
+- Movimentação e saldo são gravados na mesma transação; saída acima do saldo retorna 409 e não grava nada. Movimentações são imutáveis: correções são novos ajustes.
+- Alertas listam produtos **ativos** com `estoqueMinimo > 0` e saldo menor ou igual ao mínimo (o mesmo critério do filtro `abaixoDoMinimo` em `/produtos`).
 
 ### Banco (Turso)
 
