@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadConfig } from "../src/config.js";
+import { loadConfig, loadDbConfig } from "../src/config.js";
 import { createDb } from "../src/db/client.js";
 import { criarApp, login, type App } from "./helpers.js";
 
@@ -34,6 +34,25 @@ describe("cabeçalhos e identificação de requisições", () => {
     const res = await app.inject({ url: "/nao-existe" });
     expect(res.statusCode).toBe(404);
     expect(res.json()).toEqual({ erro: "Rota não encontrada" });
+  });
+});
+
+describe("saúde", () => {
+  it("/health/ready confirma o acesso ao banco, sem exigir login", async () => {
+    app = await criarApp();
+    const res = await app.inject({ url: "/health/ready" });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ status: "ok", banco: "ok" });
+  });
+
+  it("/health/ready responde 503 sem detalhes quando o banco falha", async () => {
+    const db = createDb(":memory:");
+    app = await criarApp({}, db);
+    db.run = () => Promise.reject(new Error("SQLITE_CANTOPEN: segredo-interno"));
+    const res = await app.inject({ url: "/health/ready" });
+    expect(res.statusCode).toBe(503);
+    expect(res.body).not.toMatch(/SQLITE|segredo/);
+    expect(res.json().requestId).toBe(res.headers["x-request-id"]);
   });
 });
 
@@ -179,6 +198,21 @@ describe("erros internos", () => {
     expect(corpo.erro).toBe("Erro interno");
     expect(corpo.requestId).toBe(res.headers["x-request-id"]);
     expect(res.body).not.toMatch(/sql|categorias|no such table/i);
+  });
+});
+
+describe("loadDbConfig", () => {
+  it("não exige JWT_SECRET (migrações e seed só precisam do banco)", () => {
+    expect(
+      loadDbConfig({ TURSO_DATABASE_URL: "libsql://x.turso.io", TURSO_AUTH_TOKEN: "t" }),
+    ).toEqual({
+      databaseUrl: "libsql://x.turso.io",
+      databaseAuthToken: "t",
+    });
+    expect(loadDbConfig({})).toEqual({
+      databaseUrl: "file:local.db",
+      databaseAuthToken: undefined,
+    });
   });
 });
 

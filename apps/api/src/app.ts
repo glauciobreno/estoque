@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import { sql } from "drizzle-orm";
 import Fastify from "fastify";
 import { ZodError } from "zod";
 import type { Config } from "./config.js";
@@ -91,7 +92,17 @@ export async function buildApp({ db, config }: { db: Db; config: Config }) {
   });
   await app.register(authPlugin, { config });
 
+  // /health: o processo está de pé. /health/ready: também alcança o banco (usado após o deploy).
   app.get("/health", { config: { rateLimit: false } }, async () => ({ status: "ok" }));
+  app.get("/health/ready", { config: { rateLimit: false } }, async (req, reply) => {
+    try {
+      await db.run(sql`select 1`);
+      return { status: "ok", banco: "ok" };
+    } catch (erro) {
+      req.log.error({ err: erro }, "banco indisponível");
+      return reply.code(503).send({ status: "indisponivel", banco: "falha", requestId: req.id });
+    }
+  });
 
   await app.register(rotasAuth, { db, config });
   await app.register(rotasCategorias, { db });

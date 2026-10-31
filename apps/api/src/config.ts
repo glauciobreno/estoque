@@ -19,6 +19,14 @@ const inteiro = (valor: string | undefined, padrao: number, nome: string) => {
   return n;
 };
 
+/** Só o necessário para falar com o banco (migrações e seed não precisam de segredo de sessão). */
+export function loadDbConfig(env: NodeJS.ProcessEnv = process.env) {
+  return {
+    databaseUrl: env.TURSO_DATABASE_URL ?? "file:local.db",
+    databaseAuthToken: env.TURSO_AUTH_TOKEN || undefined,
+  };
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const producao = env.NODE_ENV === "production";
   const jwtSecret = env.JWT_SECRET;
@@ -41,8 +49,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
 
   return {
-    databaseUrl: env.TURSO_DATABASE_URL ?? "file:local.db",
-    databaseAuthToken: env.TURSO_AUTH_TOKEN || undefined,
+    ...loadDbConfig(env),
     jwtSecret,
     corsOrigins,
     port: Number(env.PORT ?? 3000),
