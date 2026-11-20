@@ -1,14 +1,53 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/lora";
 @import "tailwindcss";
 
+/*
+ * Paleta e tipografia do design (Figma "Sistema de Estoque"): fundo creme, neutros quentes e
+ * terracota como cor de marca. A escala "slate" do Tailwind é redefinida com os neutros quentes,
+ * então toda classe slate-* do app já sai na paleta do design.
+ */
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --color-marca-50: #eef2ff;
-  --color-marca-100: #e0e7ff;
-  --color-marca-500: #6366f1;
-  --color-marca-600: #4f46e5;
-  --color-marca-700: #4338ca;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora Variable", Georgia, "Times New Roman", serif;
+
+  --color-slate-50: #fbfaf6;
+  --color-slate-100: #f1efe8;
+  --color-slate-200: #e7e4dc;
+  --color-slate-300: #d4cec1;
+  --color-slate-400: #a8a49a;
+  --color-slate-500: #7d7a72;
+  --color-slate-600: #625f58;
+  --color-slate-700: #4a4843;
+  --color-slate-800: #3a3935;
+  --color-slate-900: #302f2b;
+
+  --color-marca-50: #f8ede6;
+  --color-marca-100: #ede0d4;
+  --color-marca-500: #cf7a5c;
+  --color-marca-600: #bc6548;
+  --color-marca-700: #a75a3c;
+
+  --color-papel: #fbfaf6;
+  --color-lateral: #f1efe8;
+  --color-destaque: #e8dfd3;
+  --color-campo: #fbfaf7;
+  --color-cabecalho: #f7f6f1;
+  --color-linha: #efeee8;
+  --color-faixa: #f1eee6;
+  --color-alerta: #f5f0e7;
+  --color-sucesso: #48715b;
+  --color-sucesso-fundo: #edf3ee;
+  --color-neutro-fundo: #f0eee9;
+  --color-neutro-texto: #6e6b62;
 }
 
 body {
-  @apply bg-slate-50 text-slate-800 antialiased;
+  @apply bg-papel font-sans text-slate-900 antialiased;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }

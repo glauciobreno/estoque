@@ -10,6 +10,7 @@ import {
   CabecalhoPagina,
   Carregando,
   Erro,
+  Indicador,
   Paginacao,
   Painel,
   Selo,
@@ -36,7 +37,7 @@ export function ProdutoDetalhe() {
     queryKey: ["movimentacoes", "produto", id, page],
     queryFn: () =>
       api<Pagina<Movimentacao>>(`/produtos/${id}/movimentacoes`, {
-        params: { page, pageSize: 15 },
+        params: { page, pageSize: 10 },
       }),
   });
 
@@ -44,7 +45,10 @@ export function ProdutoDetalhe() {
   if (produto.error) {
     return (
       <>
-        <Link to="/produtos" className="mb-4 inline-block text-sm text-marca-600 hover:underline">
+        <Link
+          to="/produtos"
+          className="mb-4 inline-block text-[12px] text-marca-600 hover:underline"
+        >
           ← Produtos
         </Link>
         <Erro erro={produto.error} />
@@ -55,7 +59,7 @@ export function ProdutoDetalhe() {
 
   return (
     <>
-      <Link to="/produtos" className="mb-3 inline-block text-sm text-marca-600 hover:underline">
+      <Link to="/produtos" className="mb-4 inline-block text-[12px] text-marca-600 hover:underline">
         ← Produtos
       </Link>
       <CabecalhoPagina
@@ -73,35 +77,42 @@ export function ProdutoDetalhe() {
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <Info rotulo="Saldo">
-          <SaldoSelo produto={p} />
-        </Info>
-        <Info rotulo="Estoque mínimo">{p.estoqueMinimo}</Info>
-        <Info rotulo="Preço de custo">{formatBRL(p.precoCusto)}</Info>
-        <Info rotulo="Preço de venda">{formatBRL(p.precoVenda)}</Info>
-        <Info rotulo="Situação">
-          <Selo tom={p.ativo ? "verde" : "neutro"}>{p.ativo ? "Ativo" : "Inativo"}</Selo>
-        </Info>
+      <div className="mb-6 grid grid-cols-2 gap-6 lg:grid-cols-5">
+        <Indicador
+          rotulo="Saldo"
+          valor={<SaldoSelo produto={p} />}
+          className="[&>p:nth-child(2)]:font-sans [&>p:nth-child(2)]:text-[14px]"
+        />
+        <Indicador rotulo="Estoque mínimo" valor={p.estoqueMinimo.toLocaleString("pt-BR")} />
+        <Indicador rotulo="Preço de custo" valor={formatBRL(p.precoCusto)} />
+        <Indicador rotulo="Preço de venda" valor={formatBRL(p.precoVenda)} />
+        <Indicador
+          rotulo="Situação"
+          valor={<Selo tom={p.ativo ? "verde" : "neutro"}>{p.ativo ? "Ativo" : "Inativo"}</Selo>}
+          className="[&>p:nth-child(2)]:font-sans [&>p:nth-child(2)]:text-[14px]"
+        />
       </div>
 
       <Painel titulo="Histórico de movimentações">
-        {historico.isPending ? (
-          <Carregando />
-        ) : historico.error ? (
-          <div className="p-4">
-            <Erro erro={historico.error} />
-          </div>
-        ) : historico.data.items.length === 0 ? (
-          <Vazio>Este produto ainda não tem movimentações.</Vazio>
-        ) : (
-          <TabelaMovimentacoes itens={historico.data.items} mostrarProduto={false} />
-        )}
+        <div className="mt-4">
+          {historico.isPending ? (
+            <Carregando />
+          ) : historico.error ? (
+            <div className="p-5">
+              <Erro erro={historico.error} />
+            </div>
+          ) : historico.data.items.length === 0 ? (
+            <Vazio>Este produto ainda não tem movimentações.</Vazio>
+          ) : (
+            <TabelaMovimentacoes itens={historico.data.items} mostrarProduto={false} />
+          )}
+        </div>
         {historico.data && (
           <Paginacao
             page={historico.data.page}
             pageSize={historico.data.pageSize}
             total={historico.data.total}
+            rotulo="movimentações"
             onMudar={(n) => setParams({ page: String(n) }, { replace: true })}
           />
         )}
@@ -122,14 +133,5 @@ export function ProdutoDetalhe() {
         />
       )}
     </>
-  );
-}
-
-function Info({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-      <p className="text-sm text-slate-500">{rotulo}</p>
-      <div className="mt-1 text-lg font-semibold text-slate-900">{children}</div>
-    </div>
   );
 }

@@ -1,9 +1,10 @@
 import { categoriaSchema, idSchema, listagemSchema } from "@estoque/shared";
-import { count, eq, like } from "drizzle-orm";
+import { and, count, eq, isNull, like, sql } from "drizzle-orm";
 import type { FastifyPluginAsync } from "fastify";
 import type { Db } from "../db/client.js";
 import { categorias, produtos } from "../db/schema.js";
 import { HttpError, naoEncontrado, tratarUnico } from "../erros.js";
+import { abaixoDoMinimo } from "../estoque.js";
 import { deslocamento, pagina } from "../paginacao.js";
 
 export const rotasCategorias: FastifyPluginAsync<{ db: Db }> = async (app, { db }) => {
@@ -24,6 +25,28 @@ export const rotasCategorias: FastifyPluginAsync<{ db: Db }> = async (app, { db 
       .from(categorias)
       .where(filtro);
     return pagina(items, total, page, pageSize);
+  });
+
+  // Indicadores por categoria (só produtos ativos), para os cartões da tela de categorias.
+  app.get("/categorias/estatisticas", { preHandler: app.autenticar }, async () => {
+    const items = await db
+      .select({
+        id: categorias.id,
+        nome: categorias.nome,
+        totalProdutos: count(produtos.id),
+        saldoTotal: sql<number>`coalesce(sum(${produtos.saldoAtual}), 0)`,
+        valorEmEstoque: sql<number>`coalesce(sum(${produtos.saldoAtual} * ${produtos.precoCusto}), 0)`,
+        emAlerta: sql<number>`coalesce(sum(case when ${abaixoDoMinimo} then 1 else 0 end), 0)`,
+      })
+      .from(categorias)
+      .leftJoin(produtos, and(eq(produtos.categoriaId, categorias.id), eq(produtos.ativo, true)))
+      .groupBy(categorias.id)
+      .orderBy(categorias.nome);
+    const [sem] = await db
+      .select({ n: count() })
+      .from(produtos)
+      .where(and(isNull(produtos.categoriaId), eq(produtos.ativo, true)));
+    return { items, semCategoria: sem?.n ?? 0 };
   });
 
   app.get("/categorias/:id", { preHandler: app.autenticar }, async (req) => {

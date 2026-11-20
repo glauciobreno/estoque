@@ -1,7 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { admin, renderizarApp, simularApi } from "../test/helpers";
+import { admin, mocksDoDashboard, renderizarApp, simularApi } from "../test/helpers";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -40,11 +40,7 @@ describe("autenticação na interface", () => {
     simularApi({
       ...semSessao,
       "POST /auth/login": { corpo: admin },
-      "GET /estoque/resumo": {
-        corpo: { produtosAtivos: 3, valorEmEstoque: 123456, abaixoDoMinimo: 1, semEstoque: 0 },
-      },
-      "GET /estoque/alertas": { corpo: { items: [], total: 0, page: 1, pageSize: 8 } },
-      "GET /movimentacoes": { corpo: { items: [], total: 0, page: 1, pageSize: 8 } },
+      ...mocksDoDashboard({ produtosAtivos: 3, valorEmEstoque: 123456 }),
     });
     renderizarApp("/login");
     const usuario = userEvent.setup();
@@ -52,9 +48,9 @@ describe("autenticação na interface", () => {
     await usuario.type(screen.getByLabelText("Senha"), "admin123");
     await usuario.click(screen.getByRole("button", { name: "Entrar" }));
 
-    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText(/1\.234,56/)).toBeInTheDocument());
-    expect(screen.getByText("Nenhum produto abaixo do mínimo.")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Visão geral" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/R\$\s*1\.235/)).toBeInTheDocument());
+    expect(screen.getByText(/Nenhum produto abaixo do mínimo/)).toBeInTheDocument();
   });
 });
 
@@ -70,6 +66,7 @@ describe("sessão expirada", () => {
       },
       "GET /estoque/alertas": { status: 401, corpo: { erro: "Não autenticado" } },
       "GET /movimentacoes": { status: 401, corpo: { erro: "Não autenticado" } },
+      "GET /estoque/fluxo": { status: 401, corpo: { erro: "Não autenticado" } },
     });
     renderizarApp("/");
     expect(await screen.findByRole("button", { name: "Entrar" })).toBeInTheDocument();

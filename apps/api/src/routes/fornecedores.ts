@@ -1,5 +1,5 @@
 import { fornecedorSchema, idSchema, listagemSchema } from "@estoque/shared";
-import { count, eq, like, or } from "drizzle-orm";
+import { and, count, eq, isNotNull, like, or, sql } from "drizzle-orm";
 import type { FastifyPluginAsync } from "fastify";
 import type { Db } from "../db/client.js";
 import { fornecedores, movimentacoes } from "../db/schema.js";
@@ -26,6 +26,35 @@ export const rotasFornecedores: FastifyPluginAsync<{ db: Db }> = async (app, { d
       .from(fornecedores)
       .where(filtro);
     return pagina(items, total, page, pageSize);
+  });
+
+  // Entradas recebidas de cada fornecedor (para a tabela e os indicadores da tela).
+  app.get("/fornecedores/estatisticas", { preHandler: app.autenticar }, async () => {
+    const items = await db
+      .select({
+        id: fornecedores.id,
+        entradas: count(movimentacoes.id),
+        produtos: sql<number>`count(distinct ${movimentacoes.produtoId})`,
+        unidades: sql<number>`coalesce(sum(${movimentacoes.quantidade}), 0)`,
+        ultimaEntrada: sql<string | null>`max(${movimentacoes.criadoEm})`,
+      })
+      .from(fornecedores)
+      .leftJoin(
+        movimentacoes,
+        and(eq(movimentacoes.fornecedorId, fornecedores.id), eq(movimentacoes.tipo, "entrada")),
+      )
+      .groupBy(fornecedores.id);
+    const [mes] = await db
+      .select({ n: count() })
+      .from(movimentacoes)
+      .where(
+        and(
+          eq(movimentacoes.tipo, "entrada"),
+          isNotNull(movimentacoes.fornecedorId),
+          sql`strftime('%Y-%m', ${movimentacoes.criadoEm}) = strftime('%Y-%m', 'now')`,
+        ),
+      );
+    return { items, entradasNoMes: mes?.n ?? 0 };
   });
 
   app.get("/fornecedores/:id", { preHandler: app.autenticar }, async (req) => {

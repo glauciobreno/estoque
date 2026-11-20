@@ -1,3 +1,4 @@
+import { escolherNoMenu, irPara } from "./auxiliares";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { SESSAO_ADMIN } from "./usuarios";
 
@@ -48,7 +49,7 @@ test("o administrador cadastra só nome e e-mail e recebe o link de primeiro ace
   await expect(modalLink).toContainText("só funciona uma vez");
   await modalLink.getByRole("button", { name: "Fechar" }).last().click();
 
-  await expect(linha(page)).toContainText("Aguardando primeiro acesso");
+  await expect(linha(page)).toContainText("Pendente");
   await expect(linha(page)).toContainText("Operador");
 });
 
@@ -77,12 +78,14 @@ test("a pessoa abre o link, escolhe a senha e já entra como operador", async ({
 
   await page.getByLabel("Confirmar senha").fill(SENHA_1);
   await page.getByRole("button", { name: "Definir senha e entrar" }).click();
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("link", { name: "Usuários" })).toHaveCount(0);
+  await expect(
+    page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Usuários" }),
+  ).toHaveCount(0);
 
   await page.goto("/usuarios"); // operador não acessa a administração
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
   expect((await page.request.get("/api/usuarios")).status()).toBe(403);
   await contexto.close();
 });
@@ -100,7 +103,7 @@ test("a pessoa entra normalmente com a senha escolhida e vê a situação atuali
 }) => {
   const pessoa = await novaPessoa(browser);
   await entrar(pessoa.page, SENHA_1);
-  await expect(pessoa.page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(pessoa.page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
   await pessoa.contexto.close();
 
   await page.goto("/usuarios");
@@ -110,27 +113,27 @@ test("a pessoa entra normalmente com a senha escolhida e vê a situação atuali
 test("desativar tira o acesso na hora, e reativar devolve", async ({ browser, page }) => {
   const pessoa = await novaPessoa(browser);
   await entrar(pessoa.page, SENHA_1);
-  await expect(pessoa.page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(pessoa.page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
 
   await page.goto("/usuarios");
-  await linha(page).getByRole("button", { name: "Desativar" }).click();
+  await escolherNoMenu(linha(page), "Desativar");
   await page.getByRole("dialog").getByRole("button", { name: "Desativar" }).click();
   await expect(linha(page)).toContainText("Inativo");
 
   // a sessão que já estava aberta cai na primeira ação, sem esperar o token expirar
-  await pessoa.page.getByRole("link", { name: "Categorias" }).click();
+  await irPara(pessoa.page, "Categorias");
   await expect(pessoa.page).toHaveURL(/\/login$/);
   await expect(pessoa.page.getByRole("status")).toContainText("Sua sessão expirou");
   await entrar(pessoa.page, SENHA_1);
   await expect(pessoa.page.getByRole("alert")).toHaveText("E-mail ou senha inválidos");
 
-  await linha(page).getByRole("button", { name: "Reativar" }).click();
+  await escolherNoMenu(linha(page), "Reativar");
   await expect(linha(page)).toContainText("Ativo");
   // reativar não ressuscita a sessão antiga: a pessoa precisa entrar de novo
   await pessoa.page.goto("/");
   await expect(pessoa.page).toHaveURL(/\/login$/);
   await entrar(pessoa.page, SENHA_1);
-  await expect(pessoa.page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(pessoa.page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
   await pessoa.contexto.close();
 });
 
@@ -139,14 +142,14 @@ test("redefinir a senha: o link troca a senha e a antiga deixa de valer", async 
   page,
 }) => {
   await page.goto("/usuarios");
-  await linha(page).getByRole("button", { name: "Redefinir senha" }).click();
+  await escolherNoMenu(linha(page), "Redefinir senha");
   const modal = page.getByRole("dialog", { name: "Link para redefinir a senha" });
   const linkNovo = await modal.getByLabel("Link de acesso").inputValue();
   await modal.getByRole("button", { name: "Fechar" }).last().click();
 
   const pessoa = await novaPessoa(browser);
   await entrar(pessoa.page, SENHA_1); // a senha atual vale até o link ser usado
-  await expect(pessoa.page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(pessoa.page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
   await pessoa.contexto.close();
 
   const outra = await novaPessoa(browser);
@@ -155,14 +158,14 @@ test("redefinir a senha: o link troca a senha e a antiga deixa de valer", async 
   await outra.page.getByLabel("Senha", { exact: true }).fill(SENHA_2);
   await outra.page.getByLabel("Confirmar senha").fill(SENHA_2);
   await outra.page.getByRole("button", { name: "Definir senha e entrar" }).click();
-  await expect(outra.page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(outra.page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
   await outra.contexto.close();
 
   const conferir = await novaPessoa(browser);
   await entrar(conferir.page, SENHA_1);
   await expect(conferir.page.getByRole("alert")).toHaveText("E-mail ou senha inválidos");
   await entrar(conferir.page, SENHA_2);
-  await expect(conferir.page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(conferir.page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
   await conferir.contexto.close();
 });
 
@@ -170,7 +173,9 @@ test("o administrador altera a própria senha e não consegue se desativar", asy
   await page.goto("/usuarios");
   const minhaLinha = page.getByRole("row").filter({ hasText: "(você)" });
   await expect(minhaLinha).toBeVisible();
-  await expect(minhaLinha.getByRole("button", { name: "Desativar" })).toHaveCount(0);
+  await minhaLinha.getByRole("button", { name: /^Ações de/ }).click();
+  await expect(page.getByRole("menuitem", { name: "Desativar" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Alterar senha" }).click();
   const dialogo = page.getByRole("dialog", { name: "Alterar senha" });

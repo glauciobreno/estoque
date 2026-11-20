@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { irPara } from "./auxiliares";
 import { ADMIN } from "./usuarios";
 
 test.describe("autenticação", () => {
@@ -31,7 +32,7 @@ test.describe("autenticação", () => {
     await page.getByLabel("E-mail").fill(ADMIN.email);
     await page.getByLabel("Senha").fill(ADMIN.senha);
     await page.getByRole("button", { name: "Entrar" }).click();
-    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
 
     await page.getByRole("button", { name: "Sair" }).click();
     await expect(page).toHaveURL(/\/login$/);
@@ -44,10 +45,10 @@ test.describe("autenticação", () => {
     await page.getByLabel("E-mail").fill(ADMIN.email);
     await page.getByLabel("Senha").fill(ADMIN.senha);
     await page.getByRole("button", { name: "Entrar" }).click();
-    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
 
     await context.clearCookies(); // simula a expiração do cookie
-    await page.getByRole("link", { name: "Produtos" }).click();
+    await irPara(page, "Produtos");
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole("status")).toContainText("Sua sessão expirou");
   });
@@ -57,7 +58,7 @@ test.describe("autenticação", () => {
     await page.getByLabel("E-mail").fill(ADMIN.email);
     await page.getByLabel("Senha").fill(ADMIN.senha);
     await page.getByRole("button", { name: "Entrar" }).click();
-    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
 
     const cookie = (await context.cookies()).find((c) => c.name === "token");
     expect(cookie?.httpOnly).toBe(true);

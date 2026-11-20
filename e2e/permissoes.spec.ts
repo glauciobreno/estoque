@@ -6,11 +6,11 @@ test.use({ storageState: SESSAO_OPERADOR });
 test.describe("operador", () => {
   test("vê os cadastros, mas sem ações de edição", async ({ page }) => {
     await page.goto("/produtos");
-    await expect(page.getByRole("heading", { name: "Produtos" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Produtos", level: 1 })).toBeVisible();
     await expect(page.getByRole("button", { name: "Novo produto" })).toHaveCount(0);
 
     await page.goto("/categorias");
-    await expect(page.getByRole("heading", { name: "Categorias" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Categorias", level: 1 })).toBeVisible();
     await expect(page.getByRole("button", { name: "Nova categoria" })).toHaveCount(0);
 
     await page.goto("/fornecedores");

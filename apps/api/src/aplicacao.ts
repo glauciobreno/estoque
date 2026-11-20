@@ -13,6 +13,7 @@ import { rotasAuth } from "./routes/auth.js";
 import { rotasCategorias } from "./routes/categorias.js";
 import { rotasFornecedores } from "./routes/fornecedores.js";
 import { rotasMovimentacoes } from "./routes/movimentacoes.js";
+import { rotasPainel } from "./routes/painel.js";
 import { rotasProdutos } from "./routes/produtos.js";
 import { rotasUsuarios } from "./routes/usuarios.js";
 
@@ -110,6 +111,7 @@ export async function buildApp({ db, config }: { db: Db; config: Config }) {
   await app.register(rotasFornecedores, { db });
   await app.register(rotasProdutos, { db });
   await app.register(rotasMovimentacoes, { db });
+  await app.register(rotasPainel, { db });
   await app.register(rotasUsuarios, { db });
 
   return app;

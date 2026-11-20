@@ -1,5 +1,5 @@
 import { idSchema, produtoListagemSchema, produtoSchema } from "@estoque/shared";
-import { and, count, eq, like, or } from "drizzle-orm";
+import { and, count, eq, gt, like, lte, or } from "drizzle-orm";
 import type { FastifyPluginAsync } from "fastify";
 import type { Db } from "../db/client.js";
 import { categorias, movimentacoes, produtos } from "../db/schema.js";
@@ -27,12 +27,20 @@ export const rotasProdutos: FastifyPluginAsync<{ db: Db }> = async (app, { db })
       categoriaId,
       ativo,
       abaixoDoMinimo: filtrarAbaixo,
+      situacao,
     } = produtoListagemSchema.parse(req.query);
     const filtro = and(
       q ? or(like(produtos.nome, `%${q}%`), like(produtos.sku, `%${q}%`)) : undefined,
       categoriaId ? eq(produtos.categoriaId, categoriaId) : undefined,
       ativo === undefined ? undefined : eq(produtos.ativo, ativo),
-      filtrarAbaixo ? abaixoDoMinimo : undefined,
+      filtrarAbaixo || situacao === "baixo" ? abaixoDoMinimo : undefined,
+      situacao === "sem" ? eq(produtos.saldoAtual, 0) : undefined,
+      situacao === "saudavel"
+        ? and(
+            gt(produtos.saldoAtual, 0),
+            or(lte(produtos.estoqueMinimo, 0), gt(produtos.saldoAtual, produtos.estoqueMinimo)),
+          )
+        : undefined,
     );
     const items = await db
       .select()
