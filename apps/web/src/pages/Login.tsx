@@ -2,6 +2,7 @@ import { loginSchema } from "@estoque/shared";
 import { useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { MarcaSistema } from "../components/MarcaSistema";
 import { Button, Campo, Input } from "../components/ui";
 import { ApiError } from "../lib/api";
 
@@ -46,12 +47,11 @@ export function Login() {
       <form
         onSubmit={enviar}
         noValidate
-        className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+        className="w-full max-w-sm space-y-5 rounded-xl border border-slate-200 bg-white p-8 shadow-sm"
       >
-        <div className="text-center">
-          <p className="text-3xl">📦</p>
-          <h1 className="text-xl font-bold text-slate-900">Estoque</h1>
-          <p className="text-sm text-slate-500">Entre para continuar</p>
+        <div className="space-y-4">
+          <MarcaSistema centralizada />
+          <h1 className="text-center text-[13px] text-slate-500">Entre para continuar</h1>
         </div>
         <Campo rotulo="E-mail">
           {(id) => <Input id={id} name="email" type="email" autoComplete="username" autoFocus />}

@@ -71,10 +71,20 @@ export const listagemSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+export const SITUACOES_ESTOQUE = ["saudavel", "baixo", "sem"] as const;
+
 export const produtoListagemSchema = listagemSchema.extend({
   categoriaId: z.coerce.number().int().positive().optional(),
   ativo: booleanoQuery.optional(),
   abaixoDoMinimo: booleanoQuery.optional(),
+  /** saudavel: acima do mínimo; baixo: no mínimo ou abaixo (com mínimo definido); sem: saldo zero. */
+  situacao: z.enum(SITUACOES_ESTOQUE).optional(),
+});
+
+/** Fluxo diário: `fuso` é o deslocamento do fuso do navegador em minutos em relação ao UTC (ex.: -180). */
+export const fluxoSchema = z.object({
+  dias: z.coerce.number().int().min(1).max(60).default(7),
+  fuso: z.coerce.number().int().min(-720).max(840).default(0),
 });
 
 export const idSchema = z.object({ id: z.coerce.number().int().positive() });
@@ -116,6 +126,12 @@ export const movimentacaoListagemSchema = listagemSchema.omit({ q: true }).exten
   tipo: z.enum(TIPOS_MOVIMENTACAO).optional(),
   de: dataQuery.optional(),
   ate: dataQuery.optional(),
+});
+
+export const movimentacaoContagemSchema = movimentacaoListagemSchema.pick({
+  produtoId: true,
+  de: true,
+  ate: true,
 });
 
 export type Pagina<T> = { items: T[]; total: number; page: number; pageSize: number };

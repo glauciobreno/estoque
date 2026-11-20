@@ -1,9 +1,10 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { RotaAdmin, RotaProtegida } from "./auth/AuthContext";
-import { CadastroSimples } from "./components/CadastroSimples";
 import { Layout } from "./components/Layout";
 import { Ativar } from "./pages/Ativar";
+import { Categorias } from "./pages/Categorias";
 import { Dashboard } from "./pages/Dashboard";
+import { Fornecedores } from "./pages/Fornecedores";
 import { Login } from "./pages/Login";
 import { Movimentacoes } from "./pages/Movimentacoes";
 import { ProdutoDetalhe } from "./pages/ProdutoDetalhe";
@@ -24,32 +25,8 @@ export function App() {
           <Route element={<RotaAdmin />}>
             <Route path="usuarios" element={<Usuarios />} />
           </Route>
-          <Route
-            path="categorias"
-            element={
-              <CadastroSimples
-                titulo="Categorias"
-                singular="categoria"
-                feminino
-                endpoint="/categorias"
-                campos={[{ nome: "nome", rotulo: "Nome", obrigatorio: true, maximo: 100 }]}
-              />
-            }
-          />
-          <Route
-            path="fornecedores"
-            element={
-              <CadastroSimples
-                titulo="Fornecedores"
-                singular="fornecedor"
-                endpoint="/fornecedores"
-                campos={[
-                  { nome: "nome", rotulo: "Nome", obrigatorio: true, maximo: 150 },
-                  { nome: "contato", rotulo: "Contato", maximo: 200 },
-                ]}
-              />
-            }
-          />
+          <Route path="categorias" element={<Categorias />} />
+          <Route path="fornecedores" element={<Fornecedores />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -32,6 +32,7 @@ export type Movimentacao = {
   produtoId: number;
   produtoSku: string;
   produtoNome: string;
+  produtoUnidade: string;
   tipo: TipoMovimentacao;
   quantidade: number;
   motivo: string | null;
@@ -43,9 +44,40 @@ export type Movimentacao = {
 
 export type ResumoEstoque = {
   produtosAtivos: number;
+  produtosInativos: number;
   valorEmEstoque: number;
   abaixoDoMinimo: number;
   semEstoque: number;
+  categorias: number;
+  produtosNovosNoMes: number;
+  movimentacoesNoMes: number;
+  movimentacoesMesAnterior: number;
+};
+
+export type DiaDeFluxo = { data: string; entradas: number; saidas: number };
+
+export type ContagemMovimentacoes = {
+  todas: number;
+  entrada: number;
+  saida: number;
+  ajuste: number;
+};
+
+export type EstatisticaCategoria = {
+  id: number;
+  nome: string;
+  totalProdutos: number;
+  saldoTotal: number;
+  valorEmEstoque: number;
+  emAlerta: number;
+};
+
+export type EstatisticaFornecedor = {
+  id: number;
+  entradas: number;
+  produtos: number;
+  unidades: number;
+  ultimaEntrada: string | null;
 };
 
 export type { Pagina } from "@estoque/shared";

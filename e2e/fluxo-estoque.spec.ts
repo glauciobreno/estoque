@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { escolherNoMenu } from "./auxiliares";
 import { SESSAO_ADMIN } from "./usuarios";
 
 test.use({ storageState: SESSAO_ADMIN });
@@ -28,7 +29,7 @@ async function movimentar(
     fornecedor: forn,
   }: { tipo: "entrada" | "saida" | "ajuste"; valor: number; motivo?: string; fornecedor?: string },
 ) {
-  await linha(page).getByRole("button", { name: "Movimentar" }).click();
+  await escolherNoMenu(linha(page), "Movimentar");
   await dialogo(page).getByLabel("Tipo").selectOption(tipo);
   await dialogo(page)
     .getByLabel(tipo === "ajuste" ? "Saldo contado" : "Quantidade")
@@ -46,14 +47,14 @@ test("cadastra categoria e fornecedor", async ({ page }) => {
   await page.getByRole("button", { name: "Nova categoria" }).click();
   await dialogo(page).getByLabel("Nome").fill(categoria);
   await dialogo(page).getByRole("button", { name: "Salvar" }).click();
-  await expect(page.getByRole("cell", { name: categoria })).toBeVisible();
+  await expect(page.getByRole("heading", { name: categoria })).toBeVisible();
 
   await page.goto("/fornecedores");
   await page.getByRole("button", { name: "Novo fornecedor" }).click();
   await dialogo(page).getByLabel("Nome").fill(fornecedor);
   await dialogo(page).getByLabel("Contato").fill("contato@e2e.test");
   await dialogo(page).getByRole("button", { name: "Salvar" }).click();
-  await expect(page.getByRole("cell", { name: fornecedor })).toBeVisible();
+  await expect(page.getByText(fornecedor).first()).toBeVisible();
 });
 
 test("cadastra um produto com saldo inicial zero", async ({ page }) => {
@@ -125,17 +126,17 @@ test("o detalhe do produto mostra o histórico completo", async ({ page }) => {
   const historico = page.locator("tbody tr");
   await expect(historico).toHaveCount(3);
   await expect(historico.nth(0)).toContainText("Ajuste");
-  await expect(historico.nth(0)).toContainText("-3");
+  await expect(historico.nth(0)).toContainText("− 3");
   await expect(historico.nth(1)).toContainText("Saída");
-  await expect(historico.nth(1)).toContainText("-5");
+  await expect(historico.nth(1)).toContainText("− 5");
   await expect(historico.nth(2)).toContainText("Entrada");
-  await expect(historico.nth(2)).toContainText("+20");
+  await expect(historico.nth(2)).toContainText("+ 20");
   await expect(historico.nth(2)).toContainText("compra inicial");
 });
 
 test("produto com movimentações não pode ser excluído", async ({ page }) => {
   await buscar(page);
-  await linha(page).getByRole("button", { name: "Excluir" }).click();
+  await escolherNoMenu(linha(page), "Excluir");
   await dialogo(page).getByRole("button", { name: "Excluir" }).click();
   await expect(dialogo(page).getByRole("alert")).toContainText("possui movimentações");
   await dialogo(page).getByRole("button", { name: "Cancelar" }).click();
@@ -144,23 +145,24 @@ test("produto com movimentações não pode ser excluído", async ({ page }) => 
 
 test("produto no estoque mínimo aparece no alerta do dashboard", async ({ page }) => {
   await buscar(page);
-  await linha(page).getByRole("button", { name: "Editar" }).click();
+  await escolherNoMenu(linha(page), "Editar");
   await dialogo(page).getByLabel("Estoque mínimo").fill("12");
   await dialogo(page).getByRole("button", { name: "Salvar" }).click();
   await expect(dialogo(page)).toBeHidden();
 
   await page.goto("/");
-  const painel = page.locator("section").filter({ hasText: "Estoque baixo" });
+  const painel = page.locator("section").filter({ hasText: "Atenção ao estoque" });
   await expect(painel.getByRole("link", { name: nome })).toBeVisible();
 
-  await page.goto("/produtos?abaixo=true");
+  await page.goto("/produtos?aba=baixo");
   await page.getByLabel("Buscar produtos").fill(sku);
   await expect(linha(page)).toBeVisible();
 });
 
 test("o histórico geral filtra por tipo", async ({ page }) => {
   await page.goto("/movimentacoes");
-  await page.getByLabel("Tipo").selectOption("saida");
+  await page.getByRole("tab", { name: /^Saídas/ }).click();
   await expect(page.getByRole("row").filter({ hasText: nome })).toHaveCount(1);
   await expect(page.getByRole("row").filter({ hasText: "Entrada" })).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: /^Saídas/ })).toHaveAttribute("aria-selected", "true");
 });

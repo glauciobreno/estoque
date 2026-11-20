@@ -1,9 +1,10 @@
-import { PAPEIS, type Papel } from "@estoque/shared";
+import { PAPEIS } from "@estoque/shared";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../lib/api";
+import { nomeDoPapel } from "../lib/papeis";
 import type { Convite, UsuarioAdmin } from "../lib/types";
 import { Button, Campo, Erro, Input, Modal, Select } from "./ui";
 
@@ -13,9 +14,6 @@ const schema = z.object({
   papel: z.enum(PAPEIS),
 });
 type Valores = z.infer<typeof schema>;
-
-const rotuloPapel: Record<Papel, string> = { admin: "Administrador", operador: "Operador" };
-export const nomeDoPapel = (papel: Papel) => rotuloPapel[papel];
 
 /** Cria (sem `usuario`) ou edita nome e papel (com `usuario`). O e-mail não muda depois de criado. */
 export function UsuarioForm({
@@ -82,7 +80,7 @@ export function UsuarioForm({
             <Select id={id} disabled={ehVoce} {...register("papel")}>
               {PAPEIS.map((p) => (
                 <option key={p} value={p}>
-                  {rotuloPapel[p]}
+                  {nomeDoPapel(p)}
                 </option>
               ))}
             </Select>

@@ -1,10 +1,11 @@
 import {
   idSchema,
   listagemSchema,
+  movimentacaoContagemSchema,
   movimentacaoListagemSchema,
   movimentacaoSchema,
 } from "@estoque/shared";
-import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import type { FastifyPluginAsync } from "fastify";
 import type { Db } from "../db/client.js";
 import { movimentacoes, produtos, usuarios } from "../db/schema.js";
@@ -15,19 +16,28 @@ import { deslocamento, pagina } from "../paginacao.js";
 type Filtros = ReturnType<typeof movimentacaoListagemSchema.parse>;
 
 export const rotasMovimentacoes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) => {
-  async function listar({ produtoId, tipo, de, ate, page, pageSize }: Filtros) {
-    const filtro = and(
+  const filtroDeMovimentacoes = ({
+    produtoId,
+    tipo,
+    de,
+    ate,
+  }: Pick<Filtros, "produtoId" | "tipo" | "de" | "ate">) =>
+    and(
       produtoId ? eq(movimentacoes.produtoId, produtoId) : undefined,
       tipo ? eq(movimentacoes.tipo, tipo) : undefined,
       de ? gte(movimentacoes.criadoEm, `${de} 00:00:00`) : undefined,
       ate ? lte(movimentacoes.criadoEm, `${ate} 23:59:59`) : undefined,
     );
+
+  async function listar({ page, pageSize, ...filtros }: Filtros) {
+    const filtro = filtroDeMovimentacoes(filtros);
     const items = await db
       .select({
         id: movimentacoes.id,
         produtoId: movimentacoes.produtoId,
         produtoSku: produtos.sku,
         produtoNome: produtos.nome,
+        produtoUnidade: produtos.unidade,
         tipo: movimentacoes.tipo,
         quantidade: movimentacoes.quantidade,
         motivo: movimentacoes.motivo,
@@ -54,6 +64,18 @@ export const rotasMovimentacoes: FastifyPluginAsync<{ db: Db }> = async (app, { 
   app.post("/movimentacoes", { preHandler: app.autenticar }, async (req, reply) => {
     const dados = movimentacaoSchema.parse(req.body);
     return reply.code(201).send(await registrarMovimentacao(db, dados, req.user.id));
+  });
+
+  // Contagem por tipo no mesmo recorte de produto e período (abas e indicadores da tela).
+  app.get("/movimentacoes/contagem", { preHandler: app.autenticar }, async (req) => {
+    const linhas = await db
+      .select({ tipo: movimentacoes.tipo, n: count() })
+      .from(movimentacoes)
+      .where(filtroDeMovimentacoes(movimentacaoContagemSchema.parse(req.query)))
+      .groupBy(movimentacoes.tipo);
+    const porTipo = { entrada: 0, saida: 0, ajuste: 0 };
+    for (const linha of linhas) porTipo[linha.tipo] = linha.n;
+    return { todas: porTipo.entrada + porTipo.saida + porTipo.ajuste, ...porTipo };
   });
 
   app.get("/movimentacoes", { preHandler: app.autenticar }, async (req) =>
@@ -85,18 +107,5 @@ export const rotasMovimentacoes: FastifyPluginAsync<{ db: Db }> = async (app, { 
       .from(produtos)
       .where(filtro);
     return pagina(items, total, page, pageSize);
-  });
-
-  app.get("/estoque/resumo", { preHandler: app.autenticar }, async () => {
-    const [resumo] = await db
-      .select({
-        produtosAtivos: count(),
-        valorEmEstoque: sql<number>`coalesce(sum(${produtos.saldoAtual} * ${produtos.precoCusto}), 0)`,
-        abaixoDoMinimo: sql<number>`coalesce(sum(case when ${abaixoDoMinimo} then 1 else 0 end), 0)`,
-        semEstoque: sql<number>`coalesce(sum(case when ${produtos.saldoAtual} = 0 then 1 else 0 end), 0)`,
-      })
-      .from(produtos)
-      .where(eq(produtos.ativo, true));
-    return resumo ?? { produtosAtivos: 0, valorEmEstoque: 0, abaixoDoMinimo: 0, semEstoque: 0 };
   });
 };

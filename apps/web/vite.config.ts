@@ -23,6 +23,8 @@ const proxy = {
 };
 
 export default defineConfig({
+  // Nada é embutido como data: URI (a CSP de produção só aceita fontes e arquivos do próprio site).
+  build: { assetsInlineLimit: 0 },
   plugins: [react(), tailwindcss()],
   // @estoque/shared: no desenvolvimento usa o código-fonte (condição "source"), sem precisar compilar.
   resolve: { conditions: ["source", ...defaultClientConditions] },

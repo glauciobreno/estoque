@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { admin, operador, renderizarApp, simularApi } from "../test/helpers";
+import { admin, mocksDoDashboard, operador, renderizarApp, simularApi } from "../test/helpers";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -37,14 +37,19 @@ const lista = [
   },
   { ...base, id: 5, nome: "Eva Inativa", email: "eva@x.com", papel: "operador", ativo: false },
 ];
-const dashboard = {
-  "GET /estoque/resumo": {
-    corpo: { produtosAtivos: 0, valorEmEstoque: 0, abaixoDoMinimo: 0, semEstoque: 0 },
-  },
-  "GET /estoque/alertas": { corpo: { items: [], total: 0, page: 1, pageSize: 8 } },
-  "GET /movimentacoes": { corpo: { items: [], total: 0, page: 1, pageSize: 8 } },
-};
+const dashboard = mocksDoDashboard();
 const linha = (nome: string) => screen.getByRole("row", { name: new RegExp(nome) });
+
+async function abrirMenu(usuario: ReturnType<typeof userEvent.setup>, nome: string) {
+  const botao = within(await screen.findByRole("row", { name: new RegExp(nome) })).getByRole(
+    "button",
+    {
+      name: /^Ações de/,
+    },
+  );
+  await usuario.click(botao);
+  return within(screen.getByRole("menu"));
+}
 
 describe("tela de usuários", () => {
   it("mostra a situação de cada pessoa", async () => {
@@ -53,24 +58,44 @@ describe("tela de usuários", () => {
     await screen.findByText("Carla Pendente");
 
     expect(within(linha("Beto")).getByText("Ativo")).toBeInTheDocument();
-    expect(within(linha("Carla")).getByText("Aguardando primeiro acesso")).toBeInTheDocument();
+    expect(within(linha("Carla")).getByText("Pendente")).toBeInTheDocument();
     expect(within(linha("Carla")).getByText(/Link válido até/)).toBeInTheDocument();
     expect(within(linha("Davi")).getByText("Link expirado")).toBeInTheDocument();
     expect(within(linha("Eva")).getByText("Inativo")).toBeInTheDocument();
   });
 
-  it("o administrador não vê desativar na própria linha", async () => {
+  it("o administrador não pode se desativar, e cada situação tem as ações certas", async () => {
     simularApi({ "GET /auth/me": { corpo: admin }, "GET /usuarios": { corpo: { items: lista } } });
     renderizarApp("/usuarios");
     await screen.findByText("Carla Pendente");
     expect(within(linha("Ana Admin")).getByText("(você)")).toBeInTheDocument();
+    const usuario = userEvent.setup();
+
+    const menuDeAna = await abrirMenu(usuario, "Ana Admin");
+    expect(menuDeAna.getByRole("menuitem", { name: "Redefinir senha" })).toBeInTheDocument();
+    expect(menuDeAna.queryByRole("menuitem", { name: "Desativar" })).not.toBeInTheDocument();
+    await usuario.keyboard("{Escape}");
+
+    const menuDeBeto = await abrirMenu(usuario, "Beto");
+    expect(menuDeBeto.getByRole("menuitem", { name: "Desativar" })).toBeInTheDocument();
+    await usuario.keyboard("{Escape}");
+
+    const menuDeCarla = await abrirMenu(usuario, "Carla");
+    expect(menuDeCarla.getByRole("menuitem", { name: "Novo link" })).toBeInTheDocument();
+    await usuario.keyboard("{Escape}");
+
+    const menuDeEva = await abrirMenu(usuario, "Eva");
+    expect(menuDeEva.getByRole("menuitem", { name: "Reativar" })).toBeInTheDocument();
+    expect(menuDeEva.queryByRole("menuitem", { name: "Redefinir senha" })).not.toBeInTheDocument();
+  });
+
+  it("convite pendente tem o atalho Reenviar na linha", async () => {
+    simularApi({ "GET /auth/me": { corpo: admin }, "GET /usuarios": { corpo: { items: lista } } });
+    renderizarApp("/usuarios");
+    await screen.findByText("Carla Pendente");
+    expect(within(linha("Carla")).getByRole("button", { name: "Reenviar" })).toBeInTheDocument();
     expect(
-      within(linha("Ana Admin")).queryByRole("button", { name: "Desativar" }),
-    ).not.toBeInTheDocument();
-    expect(within(linha("Beto")).getByRole("button", { name: "Desativar" })).toBeInTheDocument();
-    expect(within(linha("Eva")).getByRole("button", { name: "Reativar" })).toBeInTheDocument();
-    expect(
-      within(linha("Eva")).queryByRole("button", { name: "Redefinir senha" }),
+      within(linha("Beto")).queryByRole("button", { name: "Reenviar" }),
     ).not.toBeInTheDocument();
   });
 
@@ -96,7 +121,7 @@ describe("tela de usuários", () => {
     });
     renderizarApp("/usuarios");
     const usuario = userEvent.setup();
-    await usuario.click(await screen.findByRole("button", { name: "Novo usuário" }));
+    await usuario.click(await screen.findByRole("button", { name: "+ Novo usuário" }));
     const dialogo = screen.getByRole("dialog");
     expect(within(dialogo).queryByLabelText(/senha/i)).not.toBeInTheDocument();
 
@@ -123,7 +148,7 @@ describe("tela de usuários", () => {
     });
     renderizarApp("/usuarios");
     const usuario = userEvent.setup();
-    await usuario.click(await screen.findByRole("button", { name: "Novo usuário" }));
+    await usuario.click(await screen.findByRole("button", { name: "+ Novo usuário" }));
     const dialogo = screen.getByRole("dialog");
     await usuario.type(within(dialogo).getByLabelText("Nome"), "Sem Email");
     await usuario.type(within(dialogo).getByLabelText("E-mail"), "invalido");
@@ -142,11 +167,8 @@ describe("tela de usuários", () => {
     });
     renderizarApp("/usuarios");
     const usuario = userEvent.setup();
-    await usuario.click(
-      within(await screen.findByRole("row", { name: /Beto/ })).getByRole("button", {
-        name: "Redefinir senha",
-      }),
-    );
+    const menu = await abrirMenu(usuario, "Beto");
+    await usuario.click(menu.getByRole("menuitem", { name: "Redefinir senha" }));
     const modal = await screen.findByRole("dialog", { name: "Link para redefinir a senha" });
     expect(within(modal).getByText(/senha atual continua valendo/)).toBeInTheDocument();
   });
@@ -159,11 +181,8 @@ describe("tela de usuários", () => {
     });
     renderizarApp("/usuarios");
     const usuario = userEvent.setup();
-    await usuario.click(
-      within(await screen.findByRole("row", { name: /Beto/ })).getByRole("button", {
-        name: "Desativar",
-      }),
-    );
+    const menu = await abrirMenu(usuario, "Beto");
+    await usuario.click(menu.getByRole("menuitem", { name: "Desativar" }));
     const dialogo = screen.getByRole("dialog");
     expect(within(dialogo).getByText(/perde o acesso imediatamente/)).toBeInTheDocument();
     await usuario.click(within(dialogo).getByRole("button", { name: "Desativar" }));
@@ -176,7 +195,7 @@ describe("permissões", () => {
   it("o operador não vê o menu Usuários e é redirecionado se abrir a rota", async () => {
     simularApi({ "GET /auth/me": { corpo: operador }, ...dashboard });
     renderizarApp("/usuarios");
-    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Visão geral" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Usuários" })).not.toBeInTheDocument();
   });
 

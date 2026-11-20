@@ -1,19 +1,13 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { admin, renderizarApp, simularApi } from "../test/helpers";
+import { admin, mocksDoDashboard, renderizarApp, simularApi } from "../test/helpers";
 
 afterEach(() => vi.unstubAllGlobals());
 
 const TOKEN = "t".repeat(43);
 const semSessao = { "GET /auth/me": { status: 401, corpo: { erro: "Não autenticado" } } };
-const dashboard = {
-  "GET /estoque/resumo": {
-    corpo: { produtosAtivos: 0, valorEmEstoque: 0, abaixoDoMinimo: 0, semEstoque: 0 },
-  },
-  "GET /estoque/alertas": { corpo: { items: [], total: 0, page: 1, pageSize: 8 } },
-  "GET /movimentacoes": { corpo: { items: [], total: 0, page: 1, pageSize: 8 } },
-};
+const dashboard = mocksDoDashboard();
 const conviteValido = {
   "POST /auth/convite/verificar": {
     corpo: { nome: "Carla Souza", email: "carla@x.com", redefinicao: false },
@@ -90,7 +84,7 @@ describe("página de primeiro acesso", () => {
     await usuario.type(screen.getByLabelText("Confirmar senha"), "senha-bem-comprida");
     await usuario.click(screen.getByRole("button", { name: "Definir senha e entrar" }));
 
-    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Visão geral" })).toBeInTheDocument();
     expect(chamadas.find((c) => c.rota === "POST /auth/convite/aceitar")?.corpo).toEqual({
       token: TOKEN,
       senha: "senha-bem-comprida",

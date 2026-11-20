@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { MarcaSistema } from "../components/MarcaSistema";
 import { Button, Campo, Carregando, Erro, Input } from "../components/ui";
 import { api } from "../lib/api";
 
@@ -46,10 +47,9 @@ export function Ativar() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <div className="mb-4 text-center">
-          <p className="text-3xl">📦</p>
-          <h1 className="text-xl font-bold text-slate-900">Estoque</h1>
+      <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="mb-5">
+          <MarcaSistema centralizada />
         </div>
 
         {token.length > 0 && convite.isPending ? (
@@ -66,7 +66,7 @@ export function Ativar() {
         ) : (
           <form onSubmit={enviar} noValidate className="space-y-4">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">
+              <h2 className="font-serif text-[22px] text-slate-900">
                 {convite.data?.redefinicao
                   ? "Redefinir senha"
                   : `Bem-vindo(a), ${convite.data?.nome}`}
