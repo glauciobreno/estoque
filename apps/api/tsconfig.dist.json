@@ -1,0 +1,6 @@
+{
+  // Compila a API como a Vercel: contra o JavaScript/tipos compilados de @estoque/shared (dist),
+  // sem a condição "source" usada no desenvolvimento.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "customConditions": [] }
+}
