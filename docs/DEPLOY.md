@@ -67,9 +67,8 @@ npm run db:seed -w @estoque/api
    | `JWT_SECRET`         | `openssl rand -base64 48` (mínimo de 32 caracteres)                   |
    | `CORS_ORIGIN`        | URL do site, ex. `https://estoque-web.vercel.app` (ajuste no passo 6) |
    | `TRUST_PROXY`        | `true`                                                                |
-   | `NODE_ENV`           | `production`                                                          |
 
-   `COOKIE_SAMESITE` fica no padrão (`lax`). `NODE_ENV=production` ativa o cookie `Secure` e exige o segredo de 32+ caracteres; a Vercel já o define em produção, e declará-lo evita depender disso.
+   `COOKIE_SAMESITE` fica no padrão (`lax`). A Vercel identifica a produção sozinha (`VERCEL_ENV=production`), o que ativa o cookie `Secure` e exige o segredo de 32+ caracteres. **Não cadastre `NODE_ENV` nas variáveis do projeto**: a Vercel as aplica também na instalação, o npm passa a pular as `devDependencies` e o build falha com `tsc: command not found`.
 
 5. Em **Settings → Functions**, escolha a região mais próxima do Turso.
 6. **Deploy**. Anote o endereço da API e teste: `curl https://SEU-API.vercel.app/health/ready` deve devolver `{"status":"ok","banco":"ok"}`.
@@ -112,6 +111,7 @@ O script confere o site, o proxy `/api`, a conexão com o banco, os cabeçalhos 
 | `403 Origem não permitida`                                      | `CORS_ORIGIN` na API não é exatamente a URL do site (esquema, subdomínio, sem barra no fim)                                                                                                                                                             |
 | `/api/health/ready` dá 503                                      | `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN` errados na API, ou migrações não aplicadas                                                                                                                                                                      |
 | Login funciona e cai logo depois                                | `VITE_API_URL` apontando para outro site (cookie de terceiros). Remova-o e use o proxy                                                                                                                                                                  |
+| Build da API falha com `tsc: command not found`                 | Há uma variável `NODE_ENV=production` no projeto da API; remova-a (veja o passo 4)                                                                                                                                                                      |
 | `429` cedo demais                                               | Falta `TRUST_PROXY=true`: todo mundo parece ter o mesmo IP                                                                                                                                                                                              |
 | Erro 500 com um código na tela                                  | Procure esse código (`requestId`) em **Runtime Logs** da API na Vercel                                                                                                                                                                                  |
 | Falha de conexão com `libsql://` em função serverless           | Use a URL com `https://` no lugar de `libsql://` (mesmo host); o cliente passa a usar HTTP                                                                                                                                                              |

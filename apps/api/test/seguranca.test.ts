@@ -234,6 +234,14 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ NODE_ENV: "production", JWT_SECRET: "x".repeat(32) })).not.toThrow();
   });
 
+  it("reconhece produção pela Vercel (VERCEL_ENV) mesmo sem NODE_ENV", () => {
+    expect(loadConfig({ ...base, VERCEL_ENV: "production" }).cookieSecure).toBe(true);
+    expect(() => loadConfig({ VERCEL_ENV: "production", JWT_SECRET: "curto" })).toThrow(
+      /JWT_SECRET/,
+    );
+    expect(loadConfig({ ...base, VERCEL_ENV: "preview" }).cookieSecure).toBe(false);
+  });
+
   it("usa cookie seguro em produção e com SameSite=none", () => {
     expect(loadConfig({ ...base, NODE_ENV: "production" }).cookieSecure).toBe(true);
     expect(loadConfig({ ...base, COOKIE_SAMESITE: "none" }).cookieSecure).toBe(true);
