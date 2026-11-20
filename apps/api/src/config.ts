@@ -28,7 +28,8 @@ export function loadDbConfig(env: NodeJS.ProcessEnv = process.env) {
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  const producao = env.NODE_ENV === "production";
+  // Na Vercel, VERCEL_ENV=production identifica a produção mesmo sem NODE_ENV.
+  const producao = env.NODE_ENV === "production" || env.VERCEL_ENV === "production";
   const jwtSecret = env.JWT_SECRET;
   if (!jwtSecret || (producao && jwtSecret.length < 32)) {
     throw new Error("JWT_SECRET ausente (em produção, mínimo de 32 caracteres)");

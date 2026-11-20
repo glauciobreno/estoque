@@ -143,6 +143,8 @@ npm run dev -w @estoque/api   # API em :3000
 npm run dev -w @estoque/web   # app em http://localhost:5173
 ```
 
+`@estoque/shared` publica JavaScript compilado (`dist`, gerado no `postinstall`) para o Node em produção; em desenvolvimento, typecheck, Vite, Vitest e tsx usam o código-fonte pela condição `source` do `exports`, então não é preciso compilar a cada mudança.
+
 Em desenvolvimento o Vite encaminha `/api/*` para a API (`API_PROXY_TARGET`, padrão `http://localhost:3000`), então front e API ficam na mesma origem, sem CORS e com cookie de sessão. Em produção defina `VITE_API_URL` com a URL da API (e `COOKIE_SAMESITE=none` se os domínios forem diferentes).
 
 - **Telas:** login, dashboard, produtos (lista, filtros, detalhe com histórico), movimentações, categorias e fornecedores.

@@ -11,6 +11,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "npm run build -w @estoque/shared",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

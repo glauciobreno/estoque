@@ -13,7 +13,7 @@ O navegador só conversa com **um** endereço (o do site). A Vercel encaminha `/
 
 > **Por que não chamar a API direto por outro domínio?** `*.vercel.app` é um sufixo público: `estoque-web.vercel.app` e `estoque-api.vercel.app` são _sites diferentes_, e o cookie da API viraria cookie de terceiros, bloqueado pelo Safari e cada vez mais pelo Chrome. O proxy evita o problema sem precisar de domínio próprio. Se você usar um domínio próprio com subdomínios (`app.seudominio.com` e `api.seudominio.com`), também funciona direto: defina `VITE_API_URL` no projeto web e ajuste a CSP em `apps/web/vercel.json` (`connect-src`).
 
-Cada push na `main` publica sozinho. Pull requests ganham URLs de preview, mas **o preview não consegue escrever na API de produção**: a API recusa a origem (`CORS_ORIGIN` lista só o site oficial). É o comportamento desejado.
+Cada push na `main` publica sozinho. Pull requests ganham URL de preview **só do projeto web**; o projeto da API ignora branches que não sejam a `main` (_Ignored Build Step_), porque ela exige os segredos de produção. O preview do web não consegue escrever na API de produção: a API recusa a origem (`CORS_ORIGIN` lista só o site oficial). É o comportamento desejado.
 
 ## Antes de começar
 
@@ -67,9 +67,8 @@ npm run db:seed -w @estoque/api
    | `JWT_SECRET`         | `openssl rand -base64 48` (mínimo de 32 caracteres)                   |
    | `CORS_ORIGIN`        | URL do site, ex. `https://estoque-web.vercel.app` (ajuste no passo 6) |
    | `TRUST_PROXY`        | `true`                                                                |
-   | `NODE_ENV`           | `production`                                                          |
 
-   `COOKIE_SAMESITE` fica no padrão (`lax`). `NODE_ENV=production` ativa o cookie `Secure` e exige o segredo de 32+ caracteres; a Vercel já o define em produção, e declará-lo evita depender disso.
+   `COOKIE_SAMESITE` fica no padrão (`lax`). A Vercel identifica a produção sozinha (`VERCEL_ENV=production`), o que ativa o cookie `Secure` e exige o segredo de 32+ caracteres. **Não cadastre `NODE_ENV` nas variáveis do projeto**: a Vercel as aplica também na instalação, o npm passa a pular as `devDependencies` e o build falha com `tsc: command not found`.
 
 5. Em **Settings → Functions**, escolha a região mais próxima do Turso.
 6. **Deploy**. Anote o endereço da API e teste: `curl https://SEU-API.vercel.app/health/ready` deve devolver `{"status":"ok","banco":"ok"}`.
@@ -106,16 +105,17 @@ O script confere o site, o proxy `/api`, a conexão com o banco, os cabeçalhos 
 
 ## Problemas comuns
 
-| Sintoma                                                   | Causa provável                                                                              |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `/api/...` responde 404 ou 502                            | O destino do rewrite em `apps/web/vercel.json` está errado, ou a API não foi publicada      |
-| `403 Origem não permitida`                                | `CORS_ORIGIN` na API não é exatamente a URL do site (esquema, subdomínio, sem barra no fim) |
-| `/api/health/ready` dá 503                                | `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN` errados na API, ou migrações não aplicadas          |
-| Login funciona e cai logo depois                          | `VITE_API_URL` apontando para outro site (cookie de terceiros). Remova-o e use o proxy      |
-| `429` cedo demais                                         | Falta `TRUST_PROXY=true`: todo mundo parece ter o mesmo IP                                  |
-| Erro 500 com um código na tela                            | Procure esse código (`requestId`) em **Runtime Logs** da API na Vercel                      |
-| Falha de conexão com `libsql://` em função serverless     | Use a URL com `https://` no lugar de `libsql://` (mesmo host); o cliente passa a usar HTTP  |
-| O build da API reclama de TypeScript do `packages/shared` | Compile o pacote para JS (`tsc`, `main` apontando para `dist`) ou use a alternativa abaixo  |
+| Sintoma                                                         | Causa provável                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/...` responde 404 ou 502                                  | O destino do rewrite em `apps/web/vercel.json` está errado, ou a API não foi publicada                                                                                                                                                                                                                                                                                       |
+| `403 Origem não permitida`                                      | `CORS_ORIGIN` na API não é exatamente a URL do site (esquema, subdomínio, sem barra no fim)                                                                                                                                                                                                                                                                                  |
+| `/api/health/ready` dá 503                                      | `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN` errados na API, ou migrações não aplicadas                                                                                                                                                                                                                                                                                           |
+| Login funciona e cai logo depois                                | `VITE_API_URL` apontando para outro site (cookie de terceiros). Remova-o e use o proxy                                                                                                                                                                                                                                                                                       |
+| Build da API falha com `tsc: command not found`                 | Há uma variável `NODE_ENV=production` no projeto da API; remova-a (veja o passo 4)                                                                                                                                                                                                                                                                                           |
+| `429` cedo demais                                               | Falta `TRUST_PROXY=true`: todo mundo parece ter o mesmo IP                                                                                                                                                                                                                                                                                                                   |
+| Erro 500 com um código na tela                                  | Procure esse código (`requestId`) em **Runtime Logs** da API na Vercel                                                                                                                                                                                                                                                                                                       |
+| Falha de conexão com `libsql://` em função serverless           | Use a URL com `https://` no lugar de `libsql://` (mesmo host); o cliente passa a usar HTTP                                                                                                                                                                                                                                                                                   |
+| `Cannot find package '.../@estoque/shared/src/index.ts'` na API | O pacote `packages/shared` precisa publicar JavaScript: o `dist` é gerado no `postinstall` da raiz (e pelo `build` da API). O `typescript` é dependência do próprio `packages/shared` porque hosts como a Vercel instalam sem `devDependencies`. Confira que a instalação roda na raiz do repositório e que _Include source files outside of the Root Directory_ está ligado |
 
 ### Alternativa sem Vercel para a API
 
