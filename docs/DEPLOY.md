@@ -57,7 +57,7 @@ npm run db:seed -w @estoque/api
 
 1. **Add New → Project**, importe `glauciobreno/estoque`.
 2. **Root Directory:** `apps/api`. Mantenha ativada a opção _Include source files outside of the Root Directory_ (o pacote `packages/shared` fica fora da pasta).
-3. **Framework Preset:** Fastify (detectado sozinho; ponto de entrada `src/server.ts`).
+3. **Framework Preset:** Fastify (detectado sozinho). O ponto de entrada na Vercel é `src/app.ts`, que exporta um handler `(req, res)`; localmente e em hosts com processo contínuo (Render, Fly.io) o ponto de entrada é `src/server.ts`.
 4. **Environment Variables** (ambiente _Production_):
 
    | Variável             | Valor                                                                 |

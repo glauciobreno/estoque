@@ -11,7 +11,7 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "node -e \"const e=process.env;console.log('DIAG NODE_ENV='+e.NODE_ENV+' npm_config_production='+e.npm_config_production+' npm_config_omit='+e.npm_config_omit+' npm_config_only='+e.npm_config_only+' VERCEL_ENV='+e.VERCEL_ENV+' node='+process.version)\" && npm config get omit && npm config get production && ls node_modules/.bin | grep -c . && (ls node_modules/typescript/package.json || echo sem-typescript) ; npm run build -w @estoque/shared",
+    "postinstall": "npm run build -w @estoque/shared",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

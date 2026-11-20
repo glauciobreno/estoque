@@ -71,7 +71,7 @@ Sistema web para controle de estoque: cadastro de produtos, categorias e fornece
 Passo a passo completo em [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 - [x] Configuração do projeto `web` (`apps/web/vercel.json`): proxy `/api`, fallback do SPA e cabeçalhos de segurança com CSP
-- [x] API pronta para a Vercel (Fastify, ponto de entrada `src/server.ts`) e variáveis de ambiente documentadas
+- [x] API pronta para a Vercel (Fastify; entrada serverless `src/app.ts`) e variáveis de ambiente documentadas
 - [x] Migrations do Drizzle rodando no CI (workflow `Migrar banco`, ambiente `production`)
 - [x] Endpoints `/health` e `/health/ready` (este confirma o acesso ao banco) e `npm run smoke` para verificar o site publicado
 - [ ] Criar o banco no Turso e os _secrets_ `TURSO_DATABASE_URL` e `TURSO_AUTH_TOKEN` no ambiente `production` do GitHub _(ação do dono do repositório)_
