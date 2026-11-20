@@ -1,4 +1,4 @@
-import { buildApp } from "./app.js";
+import { buildApp } from "./aplicacao.js";
 import { loadConfig } from "./config.js";
 import { createDb } from "./db/client.js";
 

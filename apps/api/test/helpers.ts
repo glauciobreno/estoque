@@ -1,5 +1,5 @@
 import { hash } from "bcryptjs";
-import { buildApp } from "../src/app.js";
+import { buildApp } from "../src/aplicacao.js";
 import type { Config } from "../src/config.js";
 import { createDb } from "../src/db/client.js";
 import { aplicarMigrations } from "../src/db/migrate.js";
