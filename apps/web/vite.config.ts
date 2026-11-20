@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { defaultClientConditions } from "vite";
 import { defineConfig } from "vitest/config";
 
 // Em desenvolvimento, /api é encaminhado para a API: mesma origem, sem CORS e com cookies.
@@ -23,6 +24,8 @@ const proxy = {
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // @estoque/shared: no desenvolvimento usa o código-fonte (condição "source"), sem precisar compilar.
+  resolve: { conditions: ["source", ...defaultClientConditions] },
   server: { port: 5173, proxy },
   preview: { proxy, headers: cabecalhos },
   test: {

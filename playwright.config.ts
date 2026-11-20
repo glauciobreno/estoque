@@ -31,7 +31,7 @@ export default defineConfig({
   // Sempre sobe servidores novos e um banco zerado, para os testes não dependerem de execuções anteriores.
   webServer: [
     {
-      command: "npx tsx e2e/prepare-db.ts && npm run start -w @estoque/api",
+      command: "npx tsx --conditions=source e2e/prepare-db.ts && npm run start -w @estoque/api",
       url: `http://localhost:${PORTA_API}/health`,
       reuseExistingServer: false,
       timeout: 60_000,
