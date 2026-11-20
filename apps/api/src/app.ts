@@ -1,15 +1,17 @@
 /**
  * Ponto de entrada serverless (Vercel): exporta um handler (req, res).
  * Localmente e em hosts com processo contínuo, o ponto de entrada é server.ts.
+ * O builder de Fastify da Vercel só aceita como entrada um arquivo que importe "fastify".
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
+import type { FastifyInstance } from "fastify";
 import { buildApp } from "./aplicacao.js";
 import { loadConfig } from "./config.js";
 import { createDb } from "./db/client.js";
 
-let instancia: ReturnType<typeof iniciar> | undefined;
+let instancia: Promise<FastifyInstance> | undefined;
 
-async function iniciar() {
+async function iniciar(): Promise<FastifyInstance> {
   const config = loadConfig();
   const app = await buildApp({
     db: createDb(config.databaseUrl, config.databaseAuthToken),
