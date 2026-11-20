@@ -10,7 +10,7 @@ const texto = (max: number) => z.string().trim().min(1).max(max);
 const inteiroNaoNegativo = z.number().int().min(0);
 
 export const loginSchema = z.object({
-  email: z.email().transform((v) => v.toLowerCase()),
+  email: z.email().toLowerCase(),
   senha: z.string().min(1),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -45,7 +45,7 @@ export const senhaSchema = z
 
 export const usuarioCriarSchema = z.object({
   nome: texto(100),
-  email: z.email().transform((v) => v.toLowerCase()),
+  email: z.email().toLowerCase(),
   papel: z.enum(PAPEIS),
 });
 export type UsuarioCriarInput = z.infer<typeof usuarioCriarSchema>;

@@ -10,8 +10,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --conditions=source --env-file-if-exists=../../.env src/db/migrate.ts",
     "db:seed": "tsx --conditions=source --env-file-if-exists=../../.env src/db/seed-admin.ts",
-    "typecheck": "tsc -p .",
-    "test": "vitest run --passWithNoTests"
+    "typecheck": "tsc -p . && npm run typecheck:dist",
+    "test": "vitest run --passWithNoTests",
+    "typecheck:dist": "tsc -p tsconfig.dist.json && tsc -p tsconfig.dist.json --strict false"
   },
   "dependencies": {
     "@estoque/shared": "*",

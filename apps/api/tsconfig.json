@@ -1,1 +1,6 @@
-{ "extends": "../../tsconfig.base.json", "include": ["src"] }
+{
+  "extends": "../../tsconfig.base.json",
+  // A Vercel compila a API sem seguir o "extends" da raiz; por isso o modo estrito é repetido aqui.
+  "compilerOptions": { "strict": true, "noUncheckedIndexedAccess": true },
+  "include": ["src"]
+}
