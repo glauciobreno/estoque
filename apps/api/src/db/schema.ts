@@ -13,8 +13,17 @@ export const usuarios = sqliteTable("usuarios", {
   email: text("email").notNull().unique(),
   senhaHash: text("senha_hash").notNull(),
   papel: text("papel", { enum: PAPEIS }).notNull().default("operador"),
+  ativo: integer("ativo", { mode: "boolean" }).notNull().default(true),
+  /** SHA-256 do token de primeiro acesso/redefinição; o token em si nunca é gravado. */
+  conviteHash: text("convite_hash"),
+  conviteExpiraEm: text("convite_expira_em"),
+  /** Entra no token; incrementar encerra todas as sessões abertas (senha trocada, conta desativada). */
+  sessaoVersao: integer("sessao_versao").notNull().default(0),
   criadoEm: criadoEm(),
 });
+
+/** Usuário criado pelo administrador que ainda não definiu a senha. */
+export const SEM_SENHA = "";
 
 export const categorias = sqliteTable("categorias", {
   id: integer("id").primaryKey({ autoIncrement: true }),

@@ -14,6 +14,7 @@ import { rotasCategorias } from "./routes/categorias.js";
 import { rotasFornecedores } from "./routes/fornecedores.js";
 import { rotasMovimentacoes } from "./routes/movimentacoes.js";
 import { rotasProdutos } from "./routes/produtos.js";
+import { rotasUsuarios } from "./routes/usuarios.js";
 
 const METODOS_SEGUROS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -90,7 +91,7 @@ export async function buildApp({ db, config }: { db: Db; config: Config }) {
         statusCode: 429,
       }),
   });
-  await app.register(authPlugin, { config });
+  await app.register(authPlugin, { config, db });
 
   // /health: o processo está de pé. /health/ready: também alcança o banco (usado após o deploy).
   app.get("/health", { config: { rateLimit: false } }, async () => ({ status: "ok" }));
@@ -109,6 +110,7 @@ export async function buildApp({ db, config }: { db: Db; config: Config }) {
   await app.register(rotasFornecedores, { db });
   await app.register(rotasProdutos, { db });
   await app.register(rotasMovimentacoes, { db });
+  await app.register(rotasUsuarios, { db });
 
   return app;
 }

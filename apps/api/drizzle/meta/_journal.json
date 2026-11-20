@@ -8,6 +8,13 @@
       "when": 1793216488117,
       "tag": "0000_skinny_robbie_robertson",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1795206183802,
+      "tag": "0001_usuarios_convite",
+      "breakpoints": true
     }
   ]
 }

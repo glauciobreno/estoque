@@ -37,6 +37,32 @@ export const produtoSchema = z.object({
 });
 export type ProdutoInput = z.infer<typeof produtoSchema>;
 
+/** bcrypt considera no máximo 72 bytes. */
+export const senhaSchema = z
+  .string()
+  .min(10, "A senha deve ter pelo menos 10 caracteres")
+  .max(72, "A senha deve ter no máximo 72 caracteres");
+
+export const usuarioCriarSchema = z.object({
+  nome: texto(100),
+  email: z.email().transform((v) => v.toLowerCase()),
+  papel: z.enum(PAPEIS),
+});
+export type UsuarioCriarInput = z.infer<typeof usuarioCriarSchema>;
+
+export const usuarioAtualizarSchema = z
+  .object({ nome: texto(100), papel: z.enum(PAPEIS), ativo: z.boolean() })
+  .partial()
+  .refine((dados) => Object.keys(dados).length > 0, "Informe ao menos um campo");
+
+const tokenConvite = z.string().min(20).max(200);
+export const conviteVerificarSchema = z.object({ token: tokenConvite });
+export const conviteAceitarSchema = z.object({ token: tokenConvite, senha: senhaSchema });
+export const alterarSenhaSchema = z.object({
+  senhaAtual: z.string().min(1),
+  novaSenha: senhaSchema,
+});
+
 const booleanoQuery = z.enum(["true", "false"]).transform((v) => v === "true");
 
 export const listagemSchema = z.object({

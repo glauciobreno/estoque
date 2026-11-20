@@ -2,9 +2,10 @@ import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useAuth } from "../auth/AuthContext";
+import { AlterarSenhaForm } from "./AlterarSenhaForm";
 import { Button } from "./ui";
 
-const itens = [
+const itensBase = [
   { para: "/", rotulo: "Dashboard", fim: true },
   { para: "/produtos", rotulo: "Produtos" },
   { para: "/movimentacoes", rotulo: "Movimentações" },
@@ -13,8 +14,10 @@ const itens = [
 ];
 
 export function Layout() {
-  const { usuario, logout } = useAuth();
+  const { usuario, logout, ehAdmin } = useAuth();
   const [aberto, setAberto] = useState(false);
+  const [trocandoSenha, setTrocandoSenha] = useState(false);
+  const itens = ehAdmin ? [...itensBase, { para: "/usuarios", rotulo: "Usuários" }] : itensBase;
   const { pathname } = useLocation();
 
   const menu = (
@@ -45,6 +48,13 @@ export function Layout() {
         <div className="mt-auto border-t border-slate-100 pt-4">
           <p className="truncate px-3 text-sm font-medium text-slate-900">{usuario?.nome}</p>
           <p className="mb-2 px-3 text-xs capitalize text-slate-500">{usuario?.papel}</p>
+          <Button
+            variante="fantasma"
+            className="w-full justify-start"
+            onClick={() => setTrocandoSenha(true)}
+          >
+            Alterar senha
+          </Button>
           <Button variante="fantasma" className="w-full justify-start" onClick={() => logout()}>
             Sair
           </Button>
@@ -80,6 +90,7 @@ export function Layout() {
           <Outlet />
         </ErrorBoundary>
       </main>
+      {trocandoSenha && <AlterarSenhaForm onFechar={() => setTrocandoSenha(false)} />}
     </div>
   );
 }
