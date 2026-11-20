@@ -40,6 +40,8 @@ Escolha uma região próxima da região das funções da Vercel (padrão: Washin
 2. Nesse ambiente, adicione os _secrets_ `TURSO_DATABASE_URL` e `TURSO_AUTH_TOKEN`.
 3. **Actions → Migrar banco → Run workflow** para criar as tabelas pela primeira vez.
 
+**Migrações novas precisam estar aplicadas antes de o código que as usa entrar em produção.** Se o workflow ainda não tiver os segredos, rode `npm run db:migrate -w @estoque/api` apontando para o Turso (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`) **antes** de mergear.
+
 Depois disso, o workflow roda sozinho sempre que `apps/api/drizzle/**` ou `apps/api/src/db/**` mudarem na `main`. Como a Vercel publica a API no mesmo push, **escreva migrações compatíveis com a versão anterior do código** (adicionar colunas e tabelas, nunca renomear ou remover no mesmo passo). Para mudanças destrutivas, faça em duas etapas: publica o código que não usa mais a coluna e, num segundo momento, remove a coluna.
 
 ## 3. Primeiro administrador
@@ -52,6 +54,10 @@ TURSO_DATABASE_URL='libsql://...' TURSO_AUTH_TOKEN='...' \
 ADMIN_NOME='Seu Nome' ADMIN_EMAIL='voce@exemplo.com' \
 npm run db:seed -w @estoque/api
 ```
+
+### Demais usuários
+
+Com o primeiro administrador criado, entre no site e use a tela **Usuários**: informe nome, e-mail e papel, copie o link de primeiro acesso e envie à pessoa (WhatsApp, e-mail...). Ela define a própria senha ao abrir o link. O sistema não envia e-mails; o link vale 7 dias e só funciona uma vez, e **Redefinir senha** gera um novo para quem esquecer.
 
 ## 4. Projeto da API na Vercel
 

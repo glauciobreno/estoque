@@ -22,3 +22,7 @@ export function formatData(criadoEm: string) {
 }
 
 export const formatQuantidade = (n: number) => (n > 0 ? `+${n}` : String(n));
+
+/** Datas ISO 8601 com fuso (ex.: 2026-11-27T20:00:00.000Z), como as de convite. */
+export const formatDataIso = (iso: string) =>
+  new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });

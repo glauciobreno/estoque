@@ -121,6 +121,22 @@ Após alterar `apps/api/src/db/schema.ts`, gere a migration com `npm run db:gene
 
 Listagens aceitam `q`, `page` e `pageSize` (máx. 100); `/produtos` também aceita `categoriaId`, `ativo` e `abaixoDoMinimo`. Preços são inteiros em centavos. O saldo do produto só muda por movimentações.
 
+### Usuários
+
+O primeiro administrador é criado pelo `npm run db:seed` (veja `docs/DEPLOY.md`). Os demais são criados na tela **Usuários** (só para administradores):
+
+- O administrador informa **nome, e-mail e papel**; ele não define a senha. O sistema gera um **link de primeiro acesso**, mostrado uma única vez, para ser enviado à pessoa.
+- Ao abrir o link, a pessoa escolhe a própria senha (mínimo de 10 caracteres) e já entra. O link vale 7 dias e só funciona uma vez. O token vai no fragmento da URL (`/ativar#...`), que não chega a servidores nem a logs, e o banco guarda só o hash SHA-256 dele.
+- Por segurança, o login **não** permite "criar a senha" só com o e-mail: qualquer pessoa que soubesse o e-mail poderia tomar a conta antes do dono.
+- **Redefinir senha** gera um novo link; a senha atual vale até ele ser usado. **Desativar** tira o acesso na hora e mantém o histórico; o administrador não pode desativar nem rebaixar a si mesmo.
+- Qualquer usuário pode **alterar a própria senha** (menu lateral).
+
+| Rota                                                                      | Acesso                    |
+| ------------------------------------------------------------------------- | ------------------------- |
+| `GET/POST /usuarios`, `PATCH /usuarios/:id`, `POST /usuarios/:id/convite` | `admin`                   |
+| `POST /auth/convite/verificar`, `POST /auth/convite/aceitar`              | público (limitado por IP) |
+| `POST /auth/senha`                                                        | autenticado               |
+
 ### Estoque (Fase 2)
 
 | Rota                                                               | Acesso                       |
@@ -183,7 +199,7 @@ Cobrem login e sessão, o fluxo completo de estoque (cadastro, entrada, saída, 
 **Limitações conhecidas**
 
 - O limite de requisições fica na memória de cada instância; em ambiente serverless, com várias instâncias, ele é aproximado.
-- O JWT não é revogável antes de expirar (7 dias): sair limpa o cookie, mas um token copiado continua válido até o fim. Não há gestão de usuários ainda; ao criá-la, convém reconferir o papel no banco a cada requisição.
+- O JWT dura 7 dias, mas cada requisição confere no banco se a conta está ativa, qual é o papel atual e se a versão da sessão ainda vale. Desativar a conta, trocar ou redefinir a senha encerra as sessões abertas na hora; já "sair" só limpa o cookie daquele navegador.
 
 ### Banco (Turso)
 

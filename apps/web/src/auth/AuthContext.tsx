@@ -11,6 +11,8 @@ type Auth = {
   sessaoExpirada: boolean;
   login: (email: string, senha: string) => Promise<Usuario>;
   logout: () => Promise<void>;
+  /** Primeiro acesso ou redefinição: grava a senha escolhida e já deixa a pessoa logada. */
+  aceitarConvite: (token: string, senha: string) => Promise<Usuario>;
 };
 
 const AuthContext = createContext<Auth | null>(null);
@@ -48,6 +50,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const conviteMutation = useMutation({
+    mutationFn: ({ token, senha }: { token: string; senha: string }) =>
+      api<Usuario>("/auth/convite/aceitar", { method: "POST", body: { token, senha } }),
+    onSuccess: (usuario) => {
+      setSessaoExpirada(false);
+      // Descarta dados de uma sessão anterior, mas preserva a consulta ["me"]: o AuthProvider
+      // está inscrito nela, e removê-la (clear) deixaria a tela presa ao usuário antigo.
+      queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" });
+      queryClient.setQueryData(["me"], usuario);
+    },
+  });
+
   const logoutMutation = useMutation({
     mutationFn: () => api<void>("/auth/logout", { method: "POST" }),
     onSuccess: () => {
@@ -65,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessaoExpirada,
     login: (email, senha) => loginMutation.mutateAsync({ email, senha }),
     logout: () => logoutMutation.mutateAsync(),
+    aceitarConvite: (token, senha) => conviteMutation.mutateAsync({ token, senha }),
   };
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
 }
@@ -80,5 +95,11 @@ export function RotaProtegida() {
   const local = useLocation();
   if (!usuario)
     return <Navigate to="/login" replace state={{ de: local.pathname + local.search }} />;
+  return <Outlet />;
+}
+
+export function RotaAdmin() {
+  const { ehAdmin } = useAuth();
+  if (!ehAdmin) return <Navigate to="/" replace />;
   return <Outlet />;
 }

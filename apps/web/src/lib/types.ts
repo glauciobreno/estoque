@@ -1,6 +1,15 @@
 import type { Papel, TipoMovimentacao } from "@estoque/shared";
 
 export type Usuario = { id: number; nome: string; email: string; papel: Papel };
+export type UsuarioAdmin = Usuario & {
+  ativo: boolean;
+  /** Criado pelo administrador e ainda sem senha definida. */
+  pendente: boolean;
+  conviteExpiraEm: string | null;
+  criadoEm: string;
+};
+export type Convite = { token: string; expiraEm: string };
+
 export type Categoria = { id: number; nome: string };
 export type Fornecedor = { id: number; nome: string; contato: string | null };
 
